@@ -876,7 +876,8 @@ class Object{
 	 */
 	protected function set_prop($name,$type,$value){
 		try{
-			return Validation::set($type,$value,self::$_m[0][get_class($this)][$name]);
+			$c = get_class($this);
+			return Validation::set($type,$value,isset(self::$_m[0][$c][$name]) ? self::$_m[0][$c][$name] : array());
 		}catch(\InvalidArgumentException $e){
 			throw new \InvalidArgumentException($this->_.' must be an '.$type);
 		}
