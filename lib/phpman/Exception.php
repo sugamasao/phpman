@@ -1,5 +1,5 @@
 <?php
-namespace plus;
+namespace phpman;
 /**
  * 例外の集合
  * @author tokushima

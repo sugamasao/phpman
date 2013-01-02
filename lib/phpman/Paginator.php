@@ -1,5 +1,5 @@
 <?php
-namespace plus;
+namespace phpman;
 /**
  * ページを管理するモデル
  * @author tokushima

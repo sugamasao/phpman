@@ -1,5 +1,5 @@
 <?php
-namespace plus;
+namespace phpman;
 /**
  * query文字列を作成する
  * @author tokushima

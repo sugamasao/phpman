@@ -1,5 +1,5 @@
 <?php
-namespace plus;
+namespace phpman;
 
 class Util{
 	/**
