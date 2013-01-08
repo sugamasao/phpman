@@ -67,7 +67,7 @@ class Exception extends \Exception{
 				foreach($es as $e) self::$self->messages[$key][] = $e;
 			}
 		}else{
-			if(empty($group)) $group = ($exception instanceof \org\rhaco\Exception) ? $exception->getGroup() : 'exceptions';
+			if(empty($group)) $group = ($exception instanceof self) ? $exception->getGroup() : 'exceptions';
 			if(is_object($group)) $group = str_replace("\\",'.',get_class($group));
 			self::$self->messages[$group][] = $exception;
 		}

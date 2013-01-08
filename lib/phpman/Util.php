@@ -137,19 +137,25 @@ class Util{
 		}
 	}
 	/**
-	 * 指定された$directory内のファイル情報をFileとして配列で取得
+	 * ディレクトリ内のイテレータ
 	 * @param string $directory  検索対象のファイルパス
 	 * @param boolean $recursive 階層を潜って取得するか
 	 * @param boolean $a 隠しファイルも参照するか
-	 * @return File[]
+	 * @return RecursiveDirectoryIterator
 	 */
 	static public function ls($directory,$recursive=false,$a=false){
 		$directory = self::parse_filename($directory);
 		if(is_file($directory)) $directory = dirname($directory);
 		if(is_readable($directory) && is_dir($directory)){
-			return new FileIterator($directory,1,$recursive,$a);
+			$it = new \RecursiveDirectoryIterator($directory,\FilesystemIterator::CURRENT_AS_FILEINFO|\FilesystemIterator::SKIP_DOTS|\FilesystemIterator::UNIX_PATHS);
+			if($recursive) $it = new \RecursiveIteratorIterator($it);
+			return $it;
 		}
 		throw new \InvalidArgumentException(sprintf('permission denied `%s`',$directory));
+	}
+	static private function parse_filename($filename){
+		$filename = preg_replace("/[\/]+/",'/',str_replace("\\",'/',trim($filename)));
+		return (substr($filename,-1) == '/') ? substr($filename,0,-1) : $filename;
 	}
 	
 	/**

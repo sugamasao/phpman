@@ -139,20 +139,20 @@ class Template extends Object{
 		$src = $this->replace_xtag($src);
 		/**
 		 * テンプレート作成の初期化
-		 * @param org.rhaco.lang.String $obj
+		 * @param phpman.String $obj
 		 */
 		$this->object_module('init_template',String::ref($obj,$src));
 		$src = $this->rtcomment($this->rtblock($this->rttemplate((string)$obj),$this->file));
 		$this->selected_src = $src;
 		/**
 		 * テンプレート作成の前処理
-		 * @param org.rhaco.lang.String $obj
+		 * @param phpman.String $obj
 		 */
 		$this->object_module('before_template',String::ref($obj,$src));
 		$src = $this->rtif($this->rtloop($this->rtunit($this->html_form($this->html_list((string)$obj)))));
 		/**
 		 * テンプレート作成の後処理
-		 * @param org.rhaco.lang.String $obj
+		 * @param phpman.String $obj
 		 */
 		$this->object_module('after_template',String::ref($obj,$src));
 		$src = str_replace('__PHP_ARROW__','->',(string)$obj);
@@ -168,7 +168,7 @@ class Template extends Object{
 	private function exec($_src_){
 		/**
 		 * 実行前処理
-		 * @param org.rhaco.lang.String $obj
+		 * @param phpman.String $obj
 		 */
 		$this->object_module('before_exec_template',String::ref($_obj_,$_src_));
 		$this->vars('_t_',new TemplateHelper());
@@ -192,7 +192,7 @@ class Template extends Object{
 		$_src_ = $this->selected_src = null;
 		/**
 		 * 実行後処理
-		 * @param org.rhaco.lang.String $obj
+		 * @param phpman.String $obj
 		 */
 		$this->object_module('after_exec_template',String::ref($_obj_,$_eval_src_));
 		return (string)$_obj_;
@@ -301,7 +301,7 @@ class Template extends Object{
 			}
 			/**
 			 * ブロック展開の前処理
-			 * @param org.rhaco.lang.String $obj
+			 * @param phpman.String $obj
 			 */
 			$this->object_module('before_block_template',String::ref($obj,$src));
 			$src = (string)$obj;
@@ -1350,7 +1350,7 @@ class Template extends Object{
 							<form>
 								<input type="search" name="search" value="hoge" />
 								<input type="tel" name="tel" value="000-000-0000" />
-								<input type="url" name="url" value="http://rhaco.org" />
+								<input type="url" name="url" value="http://tokushimakazutaka.com" />
 								<input type="email" name="email" value="hoge@hoge.hoge" />
 								<input type="datetime" name="datetime" value="1970-01-01T00:00:00.0Z" />
 								<input type="datetime-local" name="datetime_local" value="1970-01-01T00:00:00.0Z" />
@@ -1366,7 +1366,7 @@ class Template extends Object{
 			$t = new self();
 			$t->vars("search","hoge");
 			$t->vars("tel","000-000-0000");
-			$t->vars("url","http://rhaco.org");
+			$t->vars("url","http://tokushimakazutaka.com");
 			$t->vars("email","hoge@hoge.hoge");
 			$t->vars("datetime","1970-01-01T00:00:00.0Z");
 			$t->vars("datetime_local","1970-01-01T00:00:00.0Z");
