@@ -16,3 +16,4 @@ foreach($db->next_result() as $result){
 	var_dump($result);
 }
 
+

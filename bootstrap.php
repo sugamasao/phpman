@@ -20,6 +20,11 @@ spl_autoload_register(function($c){
 	}
 	return false;
 },true,false);
+
+if(!defined('PHPMAN_COMMONDIR') && is_dir(__DIR__.'/commons')) define('PHPMAN_COMMONDIR',__DIR__.'/commons');
+if(!defined('PHPMAN_LIBDIR') && is_dir(__DIR__.'/lib')) define('PHPMAN_LIBDIR',__DIR__.'/lib');
+if(defined('PHPMAN_LIBDIR')) set_include_path(constant('PHPMAN_LIBDIR').PATH_SEPARATOR.get_include_path());
+if(defined('PHPMAN_APPENV') && defined('PHPMAN_COMMONDIR') && is_file($f=(defined('PHPMAN_COMMONDIR').'/'.defined('PHPMAN_APPENV').'.php'))) include_once($f);
 ini_set('display_errors','On');
 ini_set('html_errors','Off');
 set_error_handler(function($n,$s,$f,$l){
@@ -31,10 +36,3 @@ if(extension_loaded('mbstring')){
 	mb_internal_encoding('UTF-8');
 }
 if(is_file(__DIR__.'/__settings__.php')) include_once(__DIR__.'/__settings__.php');
-if(!defined('PHPMAN_COMMONDIR') && is_dir(__DIR__.'/commons')) define('PHPMAN_COMMONDIR',__DIR__.'/commons');
-if(!defined('PHPMAN_LIBDIR') && is_dir(__DIR__.'/lib')) define('PHPMAN_LIBDIR',__DIR__.'/lib');
-if(defined('PHPMAN_LIBDIR')) set_include_path(constant('PHPMAN_LIBDIR').PATH_SEPARATOR.get_include_path());
-if(defined('PHPMAN_APPENV') && defined('PHPMAN_COMMONDIR') && is_file($f=(defined('PHPMAN_COMMONDIR').'/'.defined('PHPMAN_APPENV').'.php'))) include_once($f);
-
-
-
