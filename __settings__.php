@@ -2,7 +2,7 @@
 
 
 \phpman\Conf::set('phpman.Dao','connection',array(
-		'*'=>array('aaaa'=>'abc')
+		'*'=>array()
 ));
 
 

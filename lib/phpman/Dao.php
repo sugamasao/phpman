@@ -356,7 +356,13 @@ abstract class Dao extends Object{
 	final static public function recorded_query(){
 		return self::$record_query;
 	}
-	final private function query(Daq $daq){
+	/**
+	 * クエリを実行する
+	 * @param Daq $daq
+	 * @throws RuntimeException
+	 * @return \PDOStatement
+	 */
+	final public function query(Daq $daq){
 		if(self::$recording_query) self::$record_query[] = array($daq->sql(),$daq->ar_vars());
 		$statement = self::connection(get_class($this))->prepare($daq->sql());
 		if($statement === false) throw new RuntimeException('prepare fail: '.$daq->sql());

@@ -31,7 +31,7 @@ class DbConnect{
 		return $con;
 	}
 	public function last_insert_id_sql(){
-		return Daq::get('select last_insert_rowid() as last_insert_id;');
+		return new Daq('select last_insert_rowid() as last_insert_id;');
 	}
 	/**
 	 * insert文を生成する
@@ -46,7 +46,7 @@ class DbConnect{
 			$insert[] = $this->quotation($column->column());
 			$vars[] = $this->update_value($dao,$column->name());
 		}
-		return Daq::get('insert into '.$this->quotation($column->table()).' ('.implode(',',$insert).') values ('.implode(',',array_fill(0,sizeof($insert),'?')).');'
+		return new Daq('insert into '.$this->quotation($column->table()).' ('.implode(',',$insert).') values ('.implode(',',array_fill(0,sizeof($insert),'?')).');'
 				,$vars
 				,$autoid
 		);
@@ -72,7 +72,7 @@ class DbConnect{
 		}
 		$vars = array_merge($updatevars,$wherevars);
 		list($where_sql,$where_vars) = $this->where_sql($dao,$from,$query,$dao->self_columns(),null,false);
-		return Daq::get(
+		return new Daq(
 				'update '.$this->quotation($column->table()).' set '.implode(',',$update).' where '.implode(' and ',$where).(empty($where_sql) ? '' : ' and '.$where_sql)
 				,array_merge($vars,$where_vars)
 		);
@@ -89,7 +89,7 @@ class DbConnect{
 			$vars[] = $dao->{$column->name()}();
 		}
 		if(empty($where)) throw new LogicException('not primary');
-		return Daq::get(
+		return new Daq(
 				'delete from '.$this->quotation($column->table()).' where '.implode(' and ',$where)
 				,$vars
 		);
@@ -103,7 +103,7 @@ class DbConnect{
 	public function find_delete_sql(Dao $dao,Q $query){
 		$from = array();
 		list($where_sql,$where_vars) = $this->where_sql($dao,$from,$query,$dao->self_columns(),null,false);
-		return Daq::get(
+		return new Daq(
 				'delete from '.$this->quotation($dao->table()).(empty($where_sql) ? '' : ' where '.$where_sql)
 				,$where_vars
 		);
@@ -136,7 +136,7 @@ class DbConnect{
 		}
 		if(empty($select)) throw new LogicException('select invalid');
 		list($where_sql,$where_vars) = $this->where_sql($dao,$from,$query,$dao->self_columns(true),$this->where_cond_columns($dao->conds(),$from));
-		return Daq::get(('select '.implode(',',$select).' from '.implode(',',$from)
+		return new Daq(('select '.implode(',',$select).' from '.implode(',',$from)
 				.(empty($where_sql) ? '' : ' where '.$where_sql)
 				.$this->select_option_sql($paginator,$this->select_order($query,$self_columns))
 		)
@@ -248,14 +248,14 @@ class DbConnect{
 			$from[$column->table_alias()] = $column->table().' '.$column->table_alias();
 		}
 		list($where_sql,$where_vars) = $this->where_sql($dao,$from,$query,$dao->self_columns(true),$this->where_cond_columns($dao->conds(),$from));
-		return Daq::get(('select '.$exe.'('.$target_column->table_alias().'.'.$this->quotation($target_column->column()).') target_column'
-				.(empty($select) ? '' : ','.implode(',',$select))
-				.' from '.implode(',',$from)
-				.(empty($where_sql) ? '' : ' where '.$where_sql)
-				.(empty($group_column) ? '' : ' group by key_column')
-		)
-				,$where_vars
-		);
+		return new Daq(('select '.$exe.'('.$target_column->table_alias().'.'.$this->quotation($target_column->column()).') target_column'
+					.(empty($select) ? '' : ','.implode(',',$select))
+					.' from '.implode(',',$from)
+					.(empty($where_sql) ? '' : ' where '.$where_sql)
+					.(empty($group_column) ? '' : ' group by key_column')
+					)
+					,$where_vars
+				);
 	}
 	protected function where_cond_columns(array $cond_columns,array &$from){
 		$conds = array();
@@ -419,7 +419,8 @@ class DbConnect{
 	 * create table
 	 * @param Dao $dao
 	 */
-	public function create_table_sql(Dao $dao){
+	static public function create_table_sql(Dao $dao){
+		// TODO
 		$quote = function($name){
 			return '`'.$name.'`';
 		};
@@ -442,13 +443,13 @@ class DbConnect{
 				case 'integer': return $quote($name).' INTEGER';
 				case 'email':
 				case 'choice': return $quote($name).' TEXT';
-				default: throw new \InvalidArgumentException('undefined type `'.$type.'`');
+				default: throw new InvalidArgumentException('undefined type `'.$type.'`');
 			}
 		};
 		$columndef = $primary = array();
 		$sql = 'create table '.$quote($dao->table()).'('.PHP_EOL;
 		foreach($dao->props() as $prop_name => $v){
-			if($this->create_table_prop_cond($dao,$prop_name)){
+			if(self::create_table_prop_cond($dao,$prop_name)){
 				$column_str = '  '.$to_column_type($dao,$dao->prop_anon($prop_name,'type'),$prop_name);
 				$column_str .= (($dao->prop_anon($prop_name,'require') === true) ? ' not' : '').' null ';
 		
@@ -460,7 +461,8 @@ class DbConnect{
 		$sql .= ' );'.PHP_EOL;
 		return $sql;
 	}
-	protected function create_table_prop_cond(Dao $dao,$prop_name){
+	static protected function create_table_prop_cond(Dao $dao,$prop_name){
+		// TODO
 		return ($dao->prop_anon($prop_name,'extra') !== true && $dao->prop_anon($prop_name,'cond') === null);
 	}
 }
