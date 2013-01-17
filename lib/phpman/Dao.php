@@ -94,7 +94,6 @@ abstract class Dao extends Object{
 			if(empty($anon[0])){
 				$conf = explode("\\",$p);
 				$def = Conf::get('connection');
-\phpman\Log::trace('AAA');
 				while(!isset($def[implode('.',$conf)]) && !empty($conf)) array_pop($conf);
 				if(empty($conf) && !isset($def['*'])) throw new ConnectionException('could not find the connection settings `'.$p.'`');
 				$anon[0] = empty($conf) ? '*' : implode('.',$conf);
