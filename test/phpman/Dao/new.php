@@ -1,7 +1,8 @@
 <?php
+namespace test\phpman\Dao;
 
-$obj = new \local\test\db\NewDao();
-$obj->query(new \phpman\Daq(\phpman\DbConnect::create_table_sql($obj)));
+\local\test\db\NewDao::create_table();
+
 
 $obj = new \local\test\db\NewDao();
 $obj->value('aaa');
@@ -13,6 +14,8 @@ $obj->save();
 
 
 foreach(\local\test\db\NewDao::find() as $o){
-	eq(null,$o->value());
+	neq(null,$o->value());
 }
-
+foreach(\local\test\db\NewDao::find(\phpman\Q::eq('value','aaa')) as $o){
+	eq('aaa',$o->value());
+}

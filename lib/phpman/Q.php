@@ -1,15 +1,10 @@
 <?php
 namespace phpman;
 /**
- * DBの条件
+ * Where query
  * @author tokushima
- * @var number $type @['set'=>false]
- * @var number $param @['set'=>false]
- * @var Q[] $and_block @['set'=>false]
- * @var Q[] $order_by @['set'=>false]
- * @var Paginator $paginator @['set'=>false]
  */
-class Q extends Object{
+class Q{
 	const EQ = 1;
 	const NEQ = 2;
 	const GT = 3;
@@ -32,22 +27,22 @@ class Q extends Object{
 	const IGNORE = 2;
 	const NOT = 4;
 
-	protected $arg1;
-	protected $arg2;
-	protected $type;
-	protected $param;
-	protected $and_block = array();
-	protected $or_block = array();
-	protected $paginator;
-	protected $order_by = array();
+	private $arg1;
+	private $arg2;
+	private $type;
+	private $param;
+	private $and_block = array();
+	private $or_block = array();
+	private $paginator;
+	private $order_by = array();
 
-	protected function __new__($type=self::AND_BLOCK,$arg1=null,$arg2=null,$param=null){
+	public function __construct($type=self::AND_BLOCK,$arg1=null,$arg2=null,$param=null){
 		if($type === self::AND_BLOCK){
 			$this->and_block = $arg1;
 		}else if($type === self::OR_BLOCK){
-			if(!is_array($arg1) || sizeof($arg1) < 2) throw new \InvalidArgumentException('require multiple blocks');
+			if(!is_array($arg1) || sizeof($arg1) < 2) throw new InvalidArgumentException('require multiple blocks');
 			foreach($arg1 as $a){
-				if(!$a->is_block()) throw new \InvalidArgumentException('require multiple blocks');
+				if(!$a->is_block()) throw new InvalidArgumentException('require multiple blocks');
 			}
 			$this->or_block = $arg1;
 		}else{
@@ -56,9 +51,48 @@ class Q extends Object{
 		$this->arg2 = $arg2;
 		$this->type = $type;
 		if($param !== null){
-			if(!ctype_digit((string)$param)) throw new \InvalidArgumentException('`'.(string)$param.'` invalid param type');
+			if(!ctype_digit((string)$param)) throw new InvalidArgumentException('`'.(string)$param.'` invalid param type');
 			$this->param = decbin($param);
 		}
+	}
+	private function ar_value($v){
+		return is_array($v) ? $v : (($v === null) ? array() : array($v));
+	}
+	public function ar_arg1(){
+		return $this->ar_value($this->arg1);
+	}
+	public function is_arg1(){
+		return !empty($this->arg1);
+	}
+	public function ar_arg2(){
+		return $this->ar_value($this->arg2);
+	}
+	public function is_arg2(){
+		return !empty($this->arg2);
+	}
+	public function type(){
+		return $this->type;
+	}
+	public function param(){
+		return $this->param;
+	}
+	public function ar_and_block(){
+		return $this->ar_value($this->and_block);
+	}
+	public function ar_or_block(){
+		return $this->ar_value($this->or_block);
+	}
+	public function is_order_by(){
+		return !empty($this->order_by);
+	}
+	public function in_order_by($key){
+		return isset($this->order_by[$key]) ? $this->order_by[$key] : null;
+	}
+	public function ar_order_by(){
+		return $this->ar_value($this->order_by);
+	}
+	public function paginator(){
+		return $this->paginator;
 	}
 	/**
 	 * ソート順がランダムか
@@ -103,7 +137,7 @@ class Q extends Object{
 				}else if($arg instanceof Paginator){
 					$this->paginator = $arg;
 				}else{
-					throw new \BadMethodCallException('`'.(string)$arg.'` not supported');
+					throw new BadMethodCallException('`'.(string)$arg.'` not supported');
 				}
 			}
 		}
@@ -120,7 +154,7 @@ class Q extends Object{
 		}else if($this->arg1 instanceof Column){
 			return array($this->arg1);
 		}
-		throw new \InvalidArgumentException('invalid arg1');
+		throw new InvalidArgumentException('invalid arg1');
 	}
 	/**
 	 * 条件が存在しない
@@ -257,14 +291,14 @@ class Q extends Object{
 		}
 	}
 	static private function words_array($words){
-		if($words === '' || $words === null) throw new \InvalidArgumentException();
+		if($words === '' || $words === null) throw new InvalidArgumentException();
 		if(is_array($words)){
 			$result = array();
 			foreach($words as $w){
 				$w = (string)$w;
 				if($w !== '') $result[] = $w;
 			}
-			if(empty($result)) throw new \InvalidArgumentException();
+			if(empty($result)) throw new InvalidArgumentException();
 			return $result;
 		}
 		return array($words);
@@ -299,7 +333,7 @@ class Q extends Object{
 	 * @param integer $param
 	 */
 	static public function match($dict,$param=null){
-		if(!($param === null || $param === self::IGNORE)) throw new \InvalidArgumentException('invalid param');
+		if(!($param === null || $param === self::IGNORE)) throw new InvalidArgumentException('invalid param');
 		return new self(self::MATCH,str_replace(' ',',',trim($dict)),null,$param);
 	}
 	/**

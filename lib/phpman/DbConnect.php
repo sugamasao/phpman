@@ -6,7 +6,7 @@ class DbConnect{
 	protected $quotation = '`';
 	protected $order_random_str = 'rand()';
 	
-	protected function __new__($encode=null){
+	public function __construct($encode=null){
 		$this->encode = $encode;
 	}	
 	
@@ -148,7 +148,7 @@ class DbConnect{
 		if($query->is_order_by_rand()){
 			$order[] = $this->order_random_str;
 		}else{
-			foreach($query->order_by() as $q){
+			foreach($query->ar_order_by() as $q){
 				foreach($q->ar_arg1() as $column_str){
 					$order[] = $this->get_column($column_str,$self_columns)->column_alias().(($q->type() == Q::ORDER_ASC) ? ' asc' : ' desc');
 				}
@@ -318,7 +318,7 @@ class DbConnect{
 			return $this->where_sql($dao,$from,$query,$self_columns,null,$alias);
 		}
 		$and = $vars = array();
-		$arg2 = ($q->arg2() === null) ? array(null) : $q->ar_arg2();
+		$arg2 = $q->is_arg2() ? $q->ar_arg2() : array(null);
 		foreach($arg2 as $base_value){
 			$or = array();
 			foreach($q->ar_arg1() as $column_str){
@@ -415,15 +415,16 @@ class DbConnect{
 	protected function quotation($name){
 		return $this->quotation.$name.$this->quotation;
 	}
+	
+	
+	
+	
 	/**
 	 * create table
 	 * @param Dao $dao
 	 */
-	static public function create_table_sql(Dao $dao){
-		// TODO
-		$quote = function($name){
-			return '`'.$name.'`';
-		};
+	public function create_table_sql(Dao $dao){
+		$quote = function($name){ return '`'.$name.'`'; };
 		$to_column_type = function($dao,$type,$name) use($quote){
 			switch($type){
 				case '':
@@ -449,7 +450,7 @@ class DbConnect{
 		$columndef = $primary = array();
 		$sql = 'create table '.$quote($dao->table()).'('.PHP_EOL;
 		foreach($dao->props() as $prop_name => $v){
-			if(self::create_table_prop_cond($dao,$prop_name)){
+			if($this->create_table_prop_cond($dao,$prop_name)){
 				$column_str = '  '.$to_column_type($dao,$dao->prop_anon($prop_name,'type'),$prop_name);
 				$column_str .= (($dao->prop_anon($prop_name,'require') === true) ? ' not' : '').' null ';
 		
@@ -461,8 +462,10 @@ class DbConnect{
 		$sql .= ' );'.PHP_EOL;
 		return $sql;
 	}
-	static protected function create_table_prop_cond(Dao $dao,$prop_name){
-		// TODO
+	public function exists_table_sql(Dao $dao){
+		return sprintf('select count(*) from sqlite_master where type=\'table\' and name=\'%s\'',$dao->table());
+	}
+	protected function create_table_prop_cond(Dao $dao,$prop_name){
 		return ($dao->prop_anon($prop_name,'extra') !== true && $dao->prop_anon($prop_name,'cond') === null);
 	}
 }

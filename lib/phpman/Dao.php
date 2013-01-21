@@ -937,4 +937,17 @@ abstract class Dao extends Object{
 	protected function ___verify___(){
 		return true;
 	}
+	/**
+	 * テーブルの作成
+	 * @throws RuntimeException
+	 */
+	final static public function create_table(){
+		$dao = new static();
+		$daq = new Daq(static::module('exists_table_sql',$dao));
+		$count = current($dao->func_query($daq));
+		if($count == 0){
+			$daq = new Daq(static::module('create_table_sql',$dao));
+			$dao->func_query($daq);
+		}
+	}	
 }
