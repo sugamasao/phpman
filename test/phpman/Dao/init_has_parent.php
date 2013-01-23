@@ -1,6 +1,4 @@
 <?php
-namespace test\phpman\Dao;
-
 \local\test\db\InitHasParent::create_table();
 \local\test\db\ExtraInitHasParent::create_table();
 

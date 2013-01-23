@@ -58,19 +58,12 @@ class Exception extends \Exception{
 	 */
 	static public function add(\Exception $exception,$group=null){
 		if(self::$self === null){
-			$self = new self('multiple exceptions');
-			$self->id = strtoupper(base_convert(date('md'),10,36).base_convert(date('G'),10,36).base_convert(mt_rand(1296,46655),10,36));
-			self::$self = $self;
+			self::$self = new self('multiple exceptions');
+			self::$self->id = strtoupper(base_convert(date('md'),10,36).base_convert(date('G'),10,36).base_convert(mt_rand(1296,46655),10,36));
 		}
-		if($exception instanceof self){
-			foreach($exception->messages as $key => $es){
-				foreach($es as $e) self::$self->messages[$key][] = $e;
-			}
-		}else{
-			if(empty($group)) $group = ($exception instanceof self) ? $exception->getGroup() : 'exceptions';
-			if(is_object($group)) $group = str_replace("\\",'.',get_class($group));
-			self::$self->messages[$group][] = $exception;
-		}
+		if(empty($group)) $group = ($exception instanceof self) ? $exception->getGroup() : 'exceptions';
+		if(is_object($group)) $group = str_replace("\\",'.',get_class($group));
+		self::$self->messages[$group][] = $exception;
 	}
 	/**
 	 * 追加されたExceptionのクリア

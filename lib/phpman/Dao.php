@@ -466,11 +466,7 @@ abstract class Dao extends Object{
 			}
 		}
 		if(!empty($err)){
-			$msg = count($err).' exceptions: ';
-			foreach($err as $e){
-				$msg .= PHP_EOL.' '.$e->getMessage();
-				Exception::add($e);
-			}
+			foreach($err as $e) Exception::add($e);
 			Exception::throw_over();
 		}
 	}

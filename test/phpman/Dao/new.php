@@ -1,6 +1,4 @@
 <?php
-namespace test\phpman\Dao;
-
 \local\test\db\NewDao::create_table();
 
 
