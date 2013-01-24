@@ -4,7 +4,7 @@ namespace phpman;
 class DbConnect{
 	protected $encode;
 	protected $quotation = '`';
-	protected $order_random_str = 'rand()';
+	protected $order_random_str = 'random()';
 	
 	public function __construct($encode=null){
 		$this->encode = $encode;
@@ -253,6 +253,7 @@ class DbConnect{
 					.' from '.implode(',',$from)
 					.(empty($where_sql) ? '' : ' where '.$where_sql)
 					.(empty($group_column) ? '' : ' group by key_column')
+					.' order by target_column'
 					)
 					,$where_vars
 				);
@@ -363,7 +364,7 @@ class DbConnect{
 				}
 				if($value instanceof Daq){
 					$is_add_value = false;
-					$vars = array_merge($vars,$value->vars());
+					$vars = array_merge($vars,$value->ar_vars());
 				}
 				$add_join_conds = $dao->join_conds($column->name());
 				if(!empty($add_join_conds)) $column_alias .= ' and '.$this->where_cond_columns($add_join_conds,$from);

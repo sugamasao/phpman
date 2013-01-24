@@ -612,6 +612,7 @@ abstract class Dao extends Object{
 		$args = func_get_args();
 		$dao = new static();
 		$args[] = $dao->__find_conds__();
+		// TODO
 		$results = $dao->which_aggregator('distinct',$args);
 		return $results;
 	}

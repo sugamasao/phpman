@@ -5,6 +5,8 @@ namespace phpman;
  * @author tokushima
  */
 class DbConnectMysql extends DbConnect{
+	protected $order_random_str = 'rand()';
+	
 	/**
 	 * @module org.rhaco.store.db.Dbc
 	 * @param string $name

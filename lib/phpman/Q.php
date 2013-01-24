@@ -58,11 +58,21 @@ class Q{
 	private function ar_value($v){
 		return is_array($v) ? $v : (($v === null) ? array() : array($v));
 	}
-	public function ar_arg1(){
-		return $this->ar_value($this->arg1);
-	}
 	public function is_arg1(){
 		return !empty($this->arg1);
+	}
+	public function ar_arg1(){
+		if(empty($this->arg1)) return array();
+		if(is_string($this->arg1)){
+			$result = array();
+			foreach(explode(',',$this->arg1) as $arg){
+				if(!empty($arg)) $result[] = $arg;
+			}
+			return $result;
+		}else if($this->arg1 instanceof Column){
+			return array($this->arg1);
+		}
+		throw new InvalidArgumentException('invalid arg1');
 	}
 	public function ar_arg2(){
 		return $this->ar_value($this->arg2);
@@ -142,19 +152,6 @@ class Q{
 			}
 		}
 		return $this;
-	}
-	protected function __ar_arg1__(){
-		if(empty($this->arg1)) return array();
-		if(is_string($this->arg1)){
-			$result = array();
-			foreach(explode(',',$this->arg1()) as $arg){
-				if(!empty($arg)) $result[] = $arg;
-			}
-			return $result;
-		}else if($this->arg1 instanceof Column){
-			return array($this->arg1);
-		}
-		throw new InvalidArgumentException('invalid arg1');
 	}
 	/**
 	 * 条件が存在しない
