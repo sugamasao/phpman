@@ -249,29 +249,29 @@ eq(2,sizeof($result));
 eq('EDC',\local\test\db\Find::find_get(Q::eq('value1','jkl'))->value2());
 
 $i = 0;
-$r = array('jkl','ccc');
+$r = array('abc','def','ghi','jkl');
 foreach(\local\test\db\RefFind::find() as $obj){
 	eq(isset($r[$i]) ? $r[$i] : null,$obj->value());
 	$i++;
 }
-eq(2,$i);
+eq(4,$i);
 
 $i = 0;
-$r = array('jkl');
+$r = array('abc','def','ghi');
 foreach(\local\test\db\RefRefFind::find() as $obj){
 	eq(isset($r[$i]) ? $r[$i] : null,$obj->value());
 	$i++;
 }
-eq(1,$i);
+eq(3,$i);
 
 
 $i = 0;
-$r = array('jkl','ccc');
+$r = array('abc','def','ghi','jkl');
 foreach(\local\test\db\HasFind::find() as $obj){
 	eq(isset($r[$i]) ? $r[$i] : null,$obj->parent()->value1());
 	$i++;
 }
-eq(2,$i);
+eq(4,$i);
 
 
 $result = \local\test\db\Find::find_all(Q::in('value1',\local\test\db\SubFind::find_sub('value')));

@@ -8,17 +8,15 @@ class DbConnectMysql extends DbConnect{
 	protected $order_random_str = 'rand()';
 	
 	/**
-	 * @module org.rhaco.store.db.Dbc
 	 * @param string $name
 	 * @param string $host
 	 * @param number $port
 	 * @param string $user
 	 * @param string $password
 	 * @param string $sock
-	 * @see org\rhaco\store\db\module.Base::connect()
 	 */
 	public function connect($name,$host,$port,$user,$password,$sock){
-		if(!extension_loaded('pdo_mysql')) throw new \RuntimeException('pdo_mysql not supported');
+		if(!extension_loaded('pdo_mysql')) throw new RuntimeException('pdo_mysql not supported');
 		$con = null;
 		if(empty($host)) $host = 'localhost';
 		if(empty($name)) throw new \InvalidArgumentException('undef connection name');
@@ -31,7 +29,7 @@ class DbConnectMysql extends DbConnect{
 			$this->prepare_execute($con,'set autocommit=0');
 			$this->prepare_execute($con,'set session transaction isolation level read committed');
 		}catch(\PDOException $e){
-			throw new \org\rhaco\store\db\exception\DaoException((strpos($e->getMessage(),'SQLSTATE[HY000]') === false) ? $e->getMessage() : 'not supported '.__CLASS__);
+			throw new ConnectionException((strpos($e->getMessage(),'SQLSTATE[HY000]') === false) ? $e->getMessage() : 'not supported '.__CLASS__);
 		}
 		return $con;
 	}
@@ -39,22 +37,15 @@ class DbConnectMysql extends DbConnect{
 		$st = $con->prepare($sql);
 		$st->execute();
 		$error = $st->errorInfo();
-		if((int)$error[0] !== 0) throw new \InvalidArgumentException($error[2]);
+		if((int)$error[0] !== 0) throw new InvalidArgumentException($error[2]);
 	}
-	/**
-	 * @module org.rhaco.store.db.Dbc
-	 * (non-PHPdoc)
-	 * @see org\rhaco\store\db\module.Base::last_insert_id_sql()
-	 */
 	public function last_insert_id_sql(){
-		return \org\rhaco\store\db\Daq::get('select last_insert_id() as last_insert_id;');
+		return Daq::get('select last_insert_id() as last_insert_id;');
 	}
 	/**
 	 * create table
-	 * @module org.rhaco.store.db.Dbc
-	 * @param org.rhaco.store.db.Dao $dao
 	 */
-	public function create_table_sql(\org\rhaco\store\db\Dao $dao){
+	public function create_table_sql(Dao $dao){
 		$quote = function($name){
 			return '`'.$name.'`';
 		};
