@@ -79,7 +79,7 @@ class Xml implements \IteratorAggregate{
 		}else if($v === ''){
 			$v = null;
 		}else if(is_array($v) || is_object($v)){
-			if(!($v instanceof \Traversable) && ($v instanceof Object)) $v = $v->hash();
+			if(!($v instanceof \Traversable) && ($v instanceof \phpman\Object)) $v = $v->hash();
 			$r = '';
 			foreach($v as $k => $c){
 				if(is_numeric($k) && is_object($c)){
@@ -399,7 +399,7 @@ class Xml implements \IteratorAggregate{
 	 * @return XmlIterator
 	 */
 	public function in($name,$offset=0,$length=0){
-		return new XmlIterator($name,$this->value(),$offset,$length);
+		return new \phpman\XmlIterator($name,$this->value(),$offset,$length);
 		/***
 			$x = new self("abc","<def>123</def><def>456</def><def>789</def>");
 			$r = array(123,456,789);

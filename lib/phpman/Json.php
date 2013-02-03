@@ -49,7 +49,7 @@ class Json{
 		 * $variable = array(array("aa"=>1),array("aa"=>2),array("aa"=>3));
 		 * eq('[{"aa":1},{"aa":2},{"aa":3}]',self::encode($variable));
 		 */
-		if(is_object($v) && !($v instanceof \Traversable) && ($v instanceof Object)) $v = $v->hash();
+		if(is_object($v) && !($v instanceof \Traversable) && ($v instanceof \phpman\Object)) $v = $v->hash();
 		switch(gettype($v)){
 			case 'boolean': return ($v) ? 'true' : 'false';
 			case 'integer': return intval(sprintf('%d',$v));

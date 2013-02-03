@@ -6,7 +6,7 @@ namespace phpman;
  * @conf string $future_date auto_future_addで定義される日付、未定義の場合は`2038/01/01 00:00:00`
  * @conf mixed{} $connection 接続設定
  */
-abstract class Dao extends Object{
+abstract class Dao extends \phpman\Object{
 	static private $_dao_ = array();
 	static private $_cnt_ = 0;	
 
@@ -30,7 +30,7 @@ abstract class Dao extends Object{
 	}
 	final static private function connection($class){
 		if(!isset(self::$_connections_[self::$_co_anon_[$class][0]])){
-			throw new RuntimeException('unable to connect to '.$class);
+			throw new \phpman\RuntimeException('unable to connect to '.$class);
 		}
 		return self::$_connections_[self::$_co_anon_[$class][0]];
 	}
@@ -47,7 +47,7 @@ abstract class Dao extends Object{
 		foreach(self::connections() as $con) $con->commit();
 	}
 	final static private function get_con($database,$class){
-		$def = Conf::get('connection');
+		$def = \phpman\Conf::get('connection');
 		if(!isset(self::$_connections_[$database])){
 			try{
 				if(is_array($def[$database])){
@@ -56,10 +56,10 @@ abstract class Dao extends Object{
 						self::$_connections_[$database] = self::$_connections_[$def[$database]['con']];
 						return $def[$database];
 					}
-					self::$_connections_[$database] = new Db($def[$database]);
+					self::$_connections_[$database] = new \phpman\Db($def[$database]);
 				}
 			}catch(\Exception $e){
-				throw new RuntimeException($class.'('.$database.'): '.$e->getMessage());
+				throw new \phpman\RuntimeException($class.'('.$database.'): '.$e->getMessage());
 			}
 		}
 		return $def[$database];
@@ -93,9 +93,9 @@ abstract class Dao extends Object{
 						);
 			if(empty($anon[0])){
 				$conf = explode("\\",$p);
-				$def = Conf::get('connection');
+				$def = \phpman\Conf::get('connection');
 				while(!isset($def[implode('.',$conf)]) && !empty($conf)) array_pop($conf);
-				if(empty($conf) && !isset($def['*'])) throw new ConnectionException('could not find the connection settings `'.$p.'`');
+				if(empty($conf) && !isset($def['*'])) throw new \phpman\ConnectionException('could not find the connection settings `'.$p.'`');
 				$anon[0] = empty($conf) ? '*' : implode('.',$conf);
 			}
 			if(empty($anon[1])){
@@ -130,13 +130,13 @@ abstract class Dao extends Object{
 				$anon_cond = $this->prop_anon($name,'cond');
 				$column_type = $this->prop_anon($name,'type');
 
-				$column = new Column();
+				$column = new \phpman\Column();
 				$column->name($name);
 				$column->column($this->prop_anon($name,'column',$name));
 				$column->column_alias('c'.self::$_cnt_++);
 
 				if($anon_cond === null){
-					if(ctype_upper($column_type[0]) && class_exists($column_type) && is_subclass_of($column_type,__CLASS__)) throw new RuntimeException("undef ".$name." annotation 'cond'");
+					if(ctype_upper($column_type[0]) && class_exists($column_type) && is_subclass_of($column_type,__CLASS__)) throw new \phpman\RuntimeException("undef ".$name." annotation 'cond'");
 					$column->table($this->table());
 					$column->table_alias($root_table_alias);
 					$column->primary($this->prop_anon($name,'primary',false));
@@ -200,7 +200,7 @@ abstract class Dao extends Object{
 							}
 							if($self_db){
 								array_unshift($conds,Column::cond_instance($self_var,'c'.self::$_cnt_++,$this->table(),$root_table_alias));
-								if(sizeof($conds) % 2 != 0) throw new RuntimeException($name.'['.$column_type.'] is illegal condition');
+								if(sizeof($conds) % 2 != 0) throw new \phpman\RuntimeException($name.'['.$column_type.'] is illegal condition');
 								if($this->prop_anon($name,'join',false)){
 									$this->prop_anon($name,'get',false,true);
 									$this->prop_anon($name,'set',false,true);
@@ -243,7 +243,7 @@ abstract class Dao extends Object{
 		foreach($_columns_ as $c){
 			if($c->is_base() && $c->name() === $name) return $c;
 		}
-		throw new RuntimeException('undef var `'.$name.'`');
+		throw new \phpman\RuntimeException('undef var `'.$name.'`');
 	}
 	/**
 	 * 全てのColumnの一覧を取得する
@@ -365,7 +365,7 @@ abstract class Dao extends Object{
 	final public function query(Daq $daq){
 		if(self::$recording_query) self::$record_query[] = array($daq->sql(),$daq->ar_vars());
 		$statement = self::connection(get_class($this))->prepare($daq->sql());
-		if($statement === false) throw new RuntimeException('prepare fail: '.$daq->sql());
+		if($statement === false) throw new \phpman\RuntimeException('prepare fail: '.$daq->sql());
 		$statement->execute($daq->ar_vars());
 		return $statement;
 	}
@@ -374,7 +374,7 @@ abstract class Dao extends Object{
 		$errors = $statement->errorInfo();
 		if(isset($errors[1])){
 			static::rollback();
-			throw new RuntimeException('['.$errors[1].'] '.(isset($errors[2]) ? $errors[2] : '').PHP_EOL.'( '.$daq->sql().' )');
+			throw new \phpman\RuntimeException('['.$errors[1].'] '.(isset($errors[2]) ? $errors[2] : '').PHP_EOL.'( '.$daq->sql().' )');
 		}
 		return $statement->rowCount();
 	}
@@ -382,13 +382,13 @@ abstract class Dao extends Object{
 		$statement = $this->query($daq);
 		$errors = $statement->errorInfo();
 		if(isset($errors[1])){
-			throw new RuntimeException('['.$errors[1].'] '.(isset($errors[2]) ? $errors[2] : '').PHP_EOL.'( '.$daq->sql().' )');
+			throw new \phpman\RuntimeException('['.$errors[1].'] '.(isset($errors[2]) ? $errors[2] : '').PHP_EOL.'( '.$daq->sql().' )');
 		}
 		if($statement->columnCount() == 0) return ($is_list) ? array() : null;
 		return ($is_list) ? $statement->fetchAll(\PDO::FETCH_ASSOC) : $statement->fetchAll(\PDO::FETCH_COLUMN,0);
 	}
 	final private function save_verify_primary_unique(){
-		$q = new Q();
+		$q = new \phpman\Q();
 		$primary = false;
 		foreach($this->primary_columns() as $column){
 			$value = $this->{$column->name()}();
@@ -400,7 +400,7 @@ abstract class Dao extends Object{
 			$primary = true;
 		}
 		if($primary && static::find_count($q) > 0){
-			throw new UniqueException('duplicate entry',$this);
+			throw new \phpman\UniqueException('duplicate entry',$this);
 		}
 	}
 	/**
@@ -414,7 +414,7 @@ abstract class Dao extends Object{
 			$e_require = false;
 
 			if($this->prop_anon($name,'require') === true && ($value === '' || $value === null)){
-				$err[] = new RequiredException($label.' required',$name);
+				$err[] = new \phpman\RequiredException($label.' required',$name);
 				$e_require = true;
 			}
 			$unique_together = $this->prop_anon($name,'unique_together');
@@ -430,7 +430,7 @@ abstract class Dao extends Object{
 				foreach($this->primary_columns() as $column){
 					if(null !== ($pv = $this->{$column->name()})) $q[] = Q::neq($column->name(),$this->{$column->name()});
 				}
-				if(0 < call_user_func_array(array(get_class($this),'find_count'),$q)) $err[] = new UniqueException($label.' unique',$name);
+				if(0 < call_user_func_array(array(get_class($this),'find_count'),$q)) $err[] = new \phpman\UniqueException($label.' unique',$name);
 			}
 			$master = $this->prop_anon($name,'master');
 			if(!empty($master)){
@@ -444,30 +444,30 @@ abstract class Dao extends Object{
 				}
 				$mo = $r->newInstanceArgs();
 				$primarys = $mo->primary_columns();
-				if(empty($primarys) || 0 === call_user_func_array(array($mo,'find_count'),array(Q::eq(key($primarys),$this->{$name})))) $err[] = new NotfoundException($label.' master not found',$name);
+				if(empty($primarys) || 0 === call_user_func_array(array($mo,'find_count'),array(Q::eq(key($primarys),$this->{$name})))) $err[] = new \phpman\NotfoundException($label.' master not found',$name);
 			}
 			if(!$e_require && $value !== null){
 				switch($this->prop_anon($name,'type')){
 					case 'number':
 					case 'integer':
-						if($this->prop_anon($name,'min') !== null && (float)$this->prop_anon($name,'min') > $value) $err[] = new LengthException($label.' less than minimum',$name);
-						if($this->prop_anon($name,'max') !== null && (float)$this->prop_anon($name,'max') < $value) $err[] = new LengthException($label.' exceeds maximum',$name);
+						if($this->prop_anon($name,'min') !== null && (float)$this->prop_anon($name,'min') > $value) $err[] = new \phpman\LengthException($label.' less than minimum',$name);
+						if($this->prop_anon($name,'max') !== null && (float)$this->prop_anon($name,'max') < $value) $err[] = new \phpman\LengthException($label.' exceeds maximum',$name);
 						break;
 					case 'text':
 					case 'string':
 					case 'alnum':
-						if($this->prop_anon($name,'min') !== null && (int)$this->prop_anon($name,'min') > mb_strlen($value)) $err[] = new LengthException($label.' less than minimum',$name);
-						if($this->prop_anon($name,'max') !== null && (int)$this->prop_anon($name,'max') < mb_strlen($value)) $err[] = new LengthException($label.' exceeds maximum',$name);
+						if($this->prop_anon($name,'min') !== null && (int)$this->prop_anon($name,'min') > mb_strlen($value)) $err[] = new \phpman\LengthException($label.' less than minimum',$name);
+						if($this->prop_anon($name,'max') !== null && (int)$this->prop_anon($name,'max') < mb_strlen($value)) $err[] = new \phpman\LengthException($label.' exceeds maximum',$name);
 						break;
 				}
 			}
 			if($this->{'verify_'.$column->name()}() === false){
-				$err[] = new LogicException($this->prop_anon($column->name(),'label').' verify fail',$column->name());
+				$err[] = new \phpman\LogicException($this->prop_anon($column->name(),'label').' verify fail',$column->name());
 			}
 		}
 		if(!empty($err)){
-			foreach($err as $e) Exception::add($e);
-			Exception::throw_over();
+			foreach($err as $e) \phpman\Exception::add($e);
+			\phpman\Exception::throw_over();
 		}
 	}
 	final private function which_aggregator($exe,array $args,$is_list=false){
@@ -476,7 +476,7 @@ abstract class Dao extends Object{
 			$target_name = array_shift($args);
 			if(isset($args[0]) && is_string($args[0])) $gorup_name = array_shift($args);
 		}
-		$query = new Q();
+		$query = new \phpman\Q();
 		if(!empty($args)) call_user_func_array(array($query,'add'),$args);
 		$daq = static::module($exe.'_sql',$this,$target_name,$gorup_name,$query);
 		return $this->func_query($daq,$is_list);
@@ -493,8 +493,8 @@ abstract class Dao extends Object{
 		return $current;
 	}
 	final static private function exec_aggregator_by($exec,$target_name,$gorup_name,$args){
-		if(empty($target_name) || !is_string($target_name)) throw new RuntimeException('undef target_name');
-		if(empty($gorup_name) || !is_string($gorup_name)) throw new RuntimeException('undef group_name');
+		if(empty($target_name) || !is_string($target_name)) throw new \phpman\RuntimeException('undef target_name');
+		if(empty($gorup_name) || !is_string($gorup_name)) throw new \phpman\RuntimeException('undef group_name');
 		$dao = new static();
 		$args[] = $dao->__find_conds__();
 		$results = array();
@@ -612,7 +612,6 @@ abstract class Dao extends Object{
 		$args = func_get_args();
 		$dao = new static();
 		$args[] = $dao->__find_conds__();
-		// TODO
 		$results = $dao->which_aggregator('distinct',$args);
 		return $results;
 	}
@@ -623,12 +622,12 @@ abstract class Dao extends Object{
 	final static public function find_get(){
 		$args = func_get_args();
 		$dao = new static();
-		$query = new Q();
+		$query = new \phpman\Q();
 		$query->add($dao->__find_conds__());
-		$query->add(new Paginator(1,1));
+		$query->add(new \phpman\Paginator(1,1));
 		if(!empty($args)) call_user_func_array(array($query,'add'),$args);
 		foreach(self::get_statement_iterator($dao,$query) as $d) return $d;
-		throw new NotfoundException('{S} not found',$dao);
+		throw new \phpman\NotfoundException('{S} not found',$dao);
 	}
 	/**
 	 * サブクエリを取得する
@@ -639,13 +638,13 @@ abstract class Dao extends Object{
 		$args = func_get_args();
 		array_shift($args);
 		$dao = new static();
-		$query = new Q();
+		$query = new \phpman\Q();
 		$query->add($dao->__find_conds__());
 
 		if(!empty($args)) call_user_func_array(array($query,'add'),$args);
 		if(!$query->is_order_by()) $query->order($name);
 		$paginator = $query->paginator();
-		if($paginator instanceof Paginator){
+		if($paginator instanceof \phpman\Paginator){
 			if($query->is_order_by()) $paginator->order($query->in_order_by(0)->ar_arg1(),$query->in_order_by(0)->type() == Q::ORDER_ASC);
 			$paginator->total(call_user_func_array(array(get_called_class(),'find_count'),$args));
 			if($paginator->total() == 0) return array();
@@ -654,7 +653,7 @@ abstract class Dao extends Object{
 		 * SELECT文の生成
 		 * @param self $dao
 		 * @param Q $query
-		 * @param Paginator $paginator
+		 * @param phpman.Paginator $paginator
 		 * @param string $name
 		 * @return Daq
 		 */
@@ -668,7 +667,7 @@ abstract class Dao extends Object{
 		 * SELECT文の生成
 		 * @param self $dao
 		 * @param Q $query
-		 * @param Paginator $paginator
+		 * @param phpman.Paginator $paginator
 		 * @param string $name
 		 * @return Daq
 		 */
@@ -676,9 +675,9 @@ abstract class Dao extends Object{
 		$statement = $dao->query($daq);
 		$errors = $statement->errorInfo();
 		if(isset($errors[1])){
-			throw new RuntimeException('['.$errors[1].'] '.(isset($errors[2]) ? $errors[2] : ''));
+			throw new \phpman\RuntimeException('['.$errors[1].'] '.(isset($errors[2]) ? $errors[2] : ''));
 		}
-		return new StatementIterator($dao,$statement);
+		return new \phpman\StatementIterator($dao,$statement);
 	}
 	/**
 	 * 検索を実行する
@@ -687,12 +686,12 @@ abstract class Dao extends Object{
 	final static public function find(){
 		$args = func_get_args();
 		$dao = new static();
-		$query = new Q();
+		$query = new \phpman\Q();
 		$query->add($dao->__find_conds__());
 		if(!empty($args)) call_user_func_array(array($query,'add'),$args);
 		
 		$paginator = $query->paginator();
-		if($paginator instanceof Paginator){
+		if($paginator instanceof \phpman\Paginator){
 			if($query->is_order_by()) $paginator->order($query->in_order_by(0)->ar_arg1(),$query->in_order_by(0)->type() == Q::ORDER_ASC);
 			$paginator->total(call_user_func_array(array(get_called_class(),'find_count'),$args));
 			if($paginator->total() == 0) return array();
@@ -729,8 +728,8 @@ abstract class Dao extends Object{
 	final static public function find_delete(){
 		$args = func_get_args();
 		$dao = new static();
-		if(!self::$_co_anon_[get_class($dao)][4]) throw new BadMethodCallException('delete is not permitted');
-		$query = new Q();
+		if(!self::$_co_anon_[get_class($dao)][4]) throw new \phpman\BadMethodCallException('delete is not permitted');
+		$query = new \phpman\Q();
 		if(!empty($args)) call_user_func_array(array($query,'add'),$args);
 		/**
 		 * delete文の生成
@@ -743,7 +742,7 @@ abstract class Dao extends Object{
 	 * DBから削除する
 	 */
 	final public function delete(){
-		if(!self::$_co_anon_[get_class($this)][4]) throw new BadMethodCallException('delete is not permitted');
+		if(!self::$_co_anon_[get_class($this)][4]) throw new \phpman\BadMethodCallException('delete is not permitted');
 		$this->__before_delete__();
 		$this->__delete_verify__();
 		/**
@@ -751,7 +750,7 @@ abstract class Dao extends Object{
 		 * @param self $this
 		 */
 		$daq = static::module('delete_sql',$this);
-		if($this->update_query($daq) == 0) throw new NotfoundException('delete failed');
+		if($this->update_query($daq) == 0) throw new \phpman\NotfoundException('delete failed');
 		$this->__after_delete__();
 	}
 	/**
@@ -788,7 +787,7 @@ abstract class Dao extends Object{
 	 * DBへ保存する
 	 */
 	final public function save(){
-		$q = new Q();
+		$q = new \phpman\Q();
 		$new = false;
 		foreach($this->primary_columns() as $column){
 			$value = $this->{$column->name()}();
@@ -817,7 +816,7 @@ abstract class Dao extends Object{
 						case 'intdate': $this->{$column->name()}(date('Ymd')); break;
 					}
 				}else if($this->prop_anon($column->name(),'auto_future_add') === true){
-					$future = Conf::get('future_date','2038/01/01 00:00:00');
+					$future = \phpman\Conf::get('future_date','2038/01/01 00:00:00');
 					$time = strtotime($future);
 					switch($this->prop_anon($column->name(),'type')){
 						case 'timestamp':
@@ -830,7 +829,7 @@ abstract class Dao extends Object{
 			}
 		}
 		if($new){
-			if(!self::$_co_anon_[$self][2]) throw new BadMethodCallException('create save is not permitted');
+			if(!self::$_co_anon_[$self][2]) throw new \phpman\BadMethodCallException('create save is not permitted');
 			$this->__before_save__();
 			$this->__before_create__();
 			$this->save_verify_primary_unique();
@@ -843,7 +842,7 @@ abstract class Dao extends Object{
 			 * @return Daq
 			 */
 			$daq = $self::module('create_sql',$this);
-			if($this->update_query($daq) == 0) throw new RuntimeException('create failed');
+			if($this->update_query($daq) == 0) throw new \phpman\RuntimeException('create failed');
 			if($daq->is_id()){
 				/**
 				 * AUTOINCREMENTの値を取得するSQL文の生成
@@ -851,20 +850,20 @@ abstract class Dao extends Object{
 				 * @return integer
 				 */
 				$result = $this->func_query(static::module('last_insert_id_sql',$this));
-				if(empty($result)) throw new RuntimeException('create failed');
+				if(empty($result)) throw new \phpman\RuntimeException('create failed');
 				$this->{$daq->id()}($result[0]);
 			}
 			$this->__after_create__();
 			$this->__after_save__();
 		}else{
-			if(!self::$_co_anon_[$self][3]) throw new BadMethodCallException('update save is not permitted');
+			if(!self::$_co_anon_[$self][3]) throw new \phpman\BadMethodCallException('update save is not permitted');
 			$this->__before_save__();
 			$this->__before_update__();
 			$this->__update_verify__();
 			$this->__save_verify__();
 			$this->validate();
 			$args = func_get_args();
-			$query = new Q();
+			$query = new \phpman\Q();
 			if(!empty($args)) call_user_func_array(array($query,'add'),$args);
 			/**
 			 * updateを実行するSQL文の生成
@@ -873,7 +872,7 @@ abstract class Dao extends Object{
 			 */
 			$daq = $self::module('update_sql',$this,$query);
 			$affected_rows = $this->update_query($daq);
-			if($affected_rows === 0 && !empty($args)) throw new NoRowsAffectedException();
+			if($affected_rows === 0 && !empty($args)) throw new \phpman\NoRowsAffectedException();
 			$this->__after_update__();
 			$this->__after_save__();
 		}
@@ -884,8 +883,8 @@ abstract class Dao extends Object{
 	 * @return $this
 	 */
 	final public function sync(){
-		$query = new Q();
-		$query->add(new Paginator(1,1));
+		$query = new \phpman\Q();
+		$query->add(new \phpman\Paginator(1,1));
 		foreach($this->primary_columns() as $column) $query->add(Q::eq($column->name(),$this->{$column->name()}()));
 		foreach(self::get_statement_iterator($this,$query) as $dao){
 			foreach(get_object_vars($dao) as $k => $v){
@@ -893,7 +892,7 @@ abstract class Dao extends Object{
 			}
 			return $this;
 		}
-		throw new NotfoundException('{S} synchronization failed',$this);
+		throw new \phpman\NotfoundException('{S} synchronization failed',$this);
 	}
 	/**
 	 * (non-PHPdoc)
@@ -903,7 +902,7 @@ abstract class Dao extends Object{
 		try{
 			return parent::set_prop($name,$type,$value);
 		}catch(\InvalidArgumentException $e){
-			throw new InvalidArgumentException($e->getMessage(),$name);
+			throw new \phpman\InvalidArgumentException($e->getMessage(),$name);
 		}
 	}
 	/**
@@ -925,7 +924,7 @@ abstract class Dao extends Object{
 				}
 			}
 			if(!empty($err)){
-				foreach($err as $e) Exception::add($e[0],$e[1]);
+				foreach($err as $e) \phpman\Exception::add($e[0],$e[1]);
 				Exception::throw_over();
 			}
 		}
@@ -940,10 +939,10 @@ abstract class Dao extends Object{
 	 */
 	final static public function create_table(){
 		$dao = new static();
-		$daq = new Daq(static::module('exists_table_sql',$dao));
+		$daq = new \phpman\Daq(static::module('exists_table_sql',$dao));
 		$count = current($dao->func_query($daq));
 		if($count == 0){
-			$daq = new Daq(static::module('create_table_sql',$dao));
+			$daq = new \phpman\Daq(static::module('create_table_sql',$dao));
 			$dao->func_query($daq);
 		}
 	}	

@@ -54,7 +54,7 @@ class Query{
 	 */
 	static public function expand_vars(&$vars,$value,$name=null,$array=true){
 		if(!is_array($vars)) $vars = array();
-		if($value instanceof File){
+		if($value instanceof \phpman\File){
 			$vars[] = array($name,$value);
 		}else{
 			$ar = array();

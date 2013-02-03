@@ -171,7 +171,7 @@ class Template extends Object{
 		 * @param phpman.String $obj
 		 */
 		$this->object_module('before_exec_template',String::ref($_obj_,$_src_));
-		$this->vars('_t_',new TemplateHelper());
+		$this->vars('_t_',new \phpman\TemplateHelper());
 		ob_start();
 			if(is_array($this->vars) && !empty($this->vars)) extract($this->vars);
 			eval('?><?php $_display_exception_='.((Conf::get('display_exception') === true) ? 'true' : 'false').'; ?>'.((string)$_obj_));

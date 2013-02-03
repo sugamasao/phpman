@@ -3,5 +3,5 @@ namespace phpman;
 /**
  * @author tokushima
  */
-class RuntimeException extends Exception{
+class RuntimeException extends \phpman\Exception{
 }

@@ -3,5 +3,5 @@ namespace phpman;
 /**
  * @author tokushima
  */
-class LengthException extends Exception{
+class LengthException extends \phpman\Exception{
 }

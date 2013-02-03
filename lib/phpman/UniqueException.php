@@ -3,5 +3,5 @@ namespace phpman;
 /**
  * @author tokushima
  */
-class UniqueException extends Exception{
+class UniqueException extends \phpman\Exception{
 }

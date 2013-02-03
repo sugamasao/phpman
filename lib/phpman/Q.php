@@ -40,9 +40,9 @@ class Q{
 		if($type === self::AND_BLOCK){
 			$this->and_block = $arg1;
 		}else if($type === self::OR_BLOCK){
-			if(!is_array($arg1) || sizeof($arg1) < 2) throw new InvalidArgumentException('require multiple blocks');
+			if(!is_array($arg1) || sizeof($arg1) < 2) throw new \phpman\InvalidArgumentException('require multiple blocks');
 			foreach($arg1 as $a){
-				if(!$a->is_block()) throw new InvalidArgumentException('require multiple blocks');
+				if(!$a->is_block()) throw new \phpman\InvalidArgumentException('require multiple blocks');
 			}
 			$this->or_block = $arg1;
 		}else{
@@ -51,7 +51,7 @@ class Q{
 		$this->arg2 = $arg2;
 		$this->type = $type;
 		if($param !== null){
-			if(!ctype_digit((string)$param)) throw new InvalidArgumentException('`'.(string)$param.'` invalid param type');
+			if(!ctype_digit((string)$param)) throw new \phpman\InvalidArgumentException('`'.(string)$param.'` invalid param type');
 			$this->param = decbin($param);
 		}
 	}
@@ -69,10 +69,10 @@ class Q{
 				if(!empty($arg)) $result[] = $arg;
 			}
 			return $result;
-		}else if($this->arg1 instanceof Column){
+		}else if($this->arg1 instanceof \phpman\Column){
 			return array($this->arg1);
 		}
-		throw new InvalidArgumentException('invalid arg1');
+		throw new \phpman\InvalidArgumentException('invalid arg1');
 	}
 	public function ar_arg2(){
 		return $this->ar_value($this->arg2);
@@ -123,7 +123,7 @@ class Q{
 		$args = func_get_args();
 		foreach($args as $arg){
 			if(!empty($arg)){
-				if($arg instanceof Q){
+				if($arg instanceof \phpman\Q){
 					if($arg->type() == self::ORDER_ASC || $arg->type() == self::ORDER_DESC || $arg->type() == self::ORDER_RAND){
 						$this->order_by[] = $arg;
 					}else if($arg->type() == self::ORDER){
@@ -144,10 +144,10 @@ class Q{
 					}else{
 						$this->and_block[] = $arg;
 					}
-				}else if($arg instanceof Paginator){
+				}else if($arg instanceof \phpman\Paginator){
 					$this->paginator = $arg;
 				}else{
-					throw new BadMethodCallException('`'.(string)$arg.'` not supported');
+					throw new \phpman\BadMethodCallException('`'.(string)$arg.'` not supported');
 				}
 			}
 		}
@@ -282,20 +282,20 @@ class Q{
 	 */
 	static public function in($column_str,$words,$param=null){
 		try{
-			return new self(self::IN,$column_str,($words instanceof Daq) ? $words : array(self::words_array($words)),$param);
+			return new self(self::IN,$column_str,($words instanceof \phpman\Daq) ? $words : array(self::words_array($words)),$param);
 		}catch(\InvalidArgumentException $e){
 			return new self();
 		}
 	}
 	static private function words_array($words){
-		if($words === '' || $words === null) throw new InvalidArgumentException();
+		if($words === '' || $words === null) throw new \phpman\InvalidArgumentException();
 		if(is_array($words)){
 			$result = array();
 			foreach($words as $w){
 				$w = (string)$w;
 				if($w !== '') $result[] = $w;
 			}
-			if(empty($result)) throw new InvalidArgumentException();
+			if(empty($result)) throw new \phpman\InvalidArgumentException();
 			return $result;
 		}
 		return array($words);
@@ -330,7 +330,7 @@ class Q{
 	 * @param integer $param
 	 */
 	static public function match($dict,$param=null){
-		if(!($param === null || $param === self::IGNORE)) throw new InvalidArgumentException('invalid param');
+		if(!($param === null || $param === self::IGNORE)) throw new \phpman\InvalidArgumentException('invalid param');
 		return new self(self::MATCH,str_replace(' ',',',trim($dict)),null,$param);
 	}
 	/**

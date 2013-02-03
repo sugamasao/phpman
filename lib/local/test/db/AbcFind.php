@@ -1,6 +1,6 @@
 <?php
 namespace local\test\db;
-use \phpman\Q;
+use phpman\Q;
 
 class AbcFind extends Find{
 	protected function __find_conds__(){

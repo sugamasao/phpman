@@ -2,33 +2,54 @@
 namespace phpman;
 
 class Flow{
+	public function execute($map){
+		$result_vars = array();
+		$pathinfo = preg_replace("/(.*?)\?.*/","\\1",(isset($_SERVER['PATH_INFO']) ? $_SERVER['PATH_INFO'] : null));
+		$map = $this->read($map);
+
+		foreach($map['patterns'] as $k => $v){
+			if(preg_match("/^".(empty($k) ? '' : "\/").str_replace(array("\/",'/','@#S'),array('@#S',"\/","\/"),$k).'[\/]{0,1}$/',$pathinfo,$param_arr)){
+				if(!empty($map['patterns'][$k]['action'])){
+					list($class,$method) = explode('::',$map['patterns'][$k]['action']);
+					$r = new \ReflectionClass('\\'.str_replace('.','\\',$class));
+					$ins = $r->newInstance();
+					$result_vars = call_user_func_array(array($ins,$method),$param_arr);
+				}
+				if(isset($map[$k]['template'])){
+					
+				}else{
+					print(json_encode($result_vars));
+				}
+			}
+		}
+	}
 	public function read($map){
-		$automap = function($pkg_id,$name,$class,$suffix){
+		$automap = function($url,$class,$name){
+			$result = array();
+			
 			try{
 				$r = new \ReflectionClass(str_replace('.','\\',$class));
-				$automaps = $methodmaps = array();
 				foreach($r->getMethods() as $m){
 					if($m->isPublic() && !$m->isStatic() && substr($m->getName(),0,1) != '_'){
-						$automap = (boolean)preg_match('/@automap[\s]*/',$m->getDocComment());
-						if(empty($automaps) || $automap){
-							$url = $k.(($m->getName() == 'index') ? '' : (($k == '') ? '' : '/').$m->getName()).str_repeat('/(.+)',$m->getNumberOfRequiredParameters());
+						if((boolean)preg_match('/@automap[\s]*/',$m->getDocComment())){
+							$murl = $url.(($m->getName() == 'index') ? '' : (($url == '') ? '' : '/').$m->getName()).str_repeat('/(.+)',$m->getNumberOfRequiredParameters());
+							
 							for($i=0;$i<=$m->getNumberOfParameters()-$m->getNumberOfRequiredParameters();$i++){
-								$mapvar = array_merge($v,array('name'=>$name.'/'.$m->getName(),'class'=>$v['class'],'method'=>$m->getName(),'num'=>$i,'='=>dirname($r->getFilename()),'pkg_id'=>$pkg_id));
-								if($automap){
-									$automaps[$url.$suffix] = $mapvar;
-								}else{
-									$methodmaps[$url.$suffix] = $mapvar;
-								}
-								$url .= '/(.+)';
+								$result[$murl] = array(
+													'name'=>$name.'/'.$m->getName()
+													,'action'=>$class.'::'.$m->getName()
+													,'num'=>$i
+													,'='=>dirname($r->getFilename())
+													);
+								$murl .= '/(.+)';
 							}
 						}
 					}
 				}
-				$apps = array_merge($apps,(empty($automaps) ? $methodmaps : $automaps));
-				unset($automaps,$methodmaps);
 			}catch(\ReflectionException $e){
-				throw new \InvalidArgumentException($v['class'].' not found');
+				throw new exception\InvalidArgumentException($class.' not found');
 			}
+			return $result;
 		};
 		$fixed_vars = function($fixed_keys,$map,$base){
 			foreach($fixed_keys as $t => $keys){
@@ -61,54 +82,33 @@ class Flow{
 				)
 				,1=>array('modules')
 		);
-		$gen_keys = array(
-				0=>array('pkg_id','class','method','num','=','url','format','pattern')
-		);
 				
 		$target_pattern = array();
 		$pathinfo = preg_replace("/(.*?)\?.*/","\\1",(isset($_SERVER['PATH_INFO']) ? $_SERVER['PATH_INFO'] : null));
 		if(is_string($map) && preg_match('/^[\w\.]+$/',$map)) $map = array('patterns'=>array(''=>array('action'=>$map)));
-		if(!isset($map['patterns']) || !is_array($map['patterns'])) throw new InvalidArgumentException('pattern not found');
+		if(!isset($map['patterns']) || !is_array($map['patterns'])) throw new exception\InvalidArgumentException('pattern not found');
 		
-		foreach($map['patterns'] as $k => $v){
+		foreach($map['patterns'] as $k => $v){		
 			if(is_int($k) || isset($map['patterns'][$k]['patterns'])){
-				$maps_url = is_int($k) ? null : $k.'/';
+				$kurl = is_int($k) ? null : $k.'/';
 				$kpattern = $map['patterns'][$k]['patterns'];
 				unset($map['patterns'][$k]['patterns']);
 				
 				foreach($kpattern as $pk => $pv){
-					$map['patterns'][$maps_url.$pk] = $fixed_vars($map_pattern_keys,$pv,$map['patterns'][$k]);
+					$map['patterns'][$kurl.$pk] = $fixed_vars($map_pattern_keys,$pv,$map['patterns'][$k]);
 				}
 			}else{
 				$map['patterns'][$k] = $fixed_vars($map_pattern_keys,$map['patterns'][$k],array());
 			}
 		}
+		foreach($map['patterns'] as $k => $v){
+			if(strpos('::',$map['patterns'][$k]['action']) === false){
+				foreach($automap($k,$map['patterns'][$k]['action'],$map['patterns'][$k]['name']) as $murl => $am){
+					$map['patterns'][$murl] = array_merge($map['patterns'][$k],$am);
+				}
+				unset($map['patterns'][$k]);
+			}
+		}
 		return $map;
-		
-		/***
-			$self = new self();
-			$map = $self->read(array(
-						'module'=>array('xyz.opq.Qstu')
-						,'patterns'=>array(
-							'abc'=>array('action'=>'abc.def.Ghi')
-							,'def'=>array(
-								'args'=>array('A'=>1)
-								,'patterns'=>array(
-									'ABC'=>array(
-										'action'=>'abc.def.Ghi'
-										,'args'=>array('B'=>2)
-									)
-								)
-							)
-						)
-					));
-			if(eq(true,isset($map['patterns']['abc']))){
-				eq(true,array_key_exists('name',$map['patterns']['abc']));
-			}
-			if(eq(true,isset($map['patterns']['def/ABC']))){
-				eq(true,array_key_exists('name',$map['patterns']['def/ABC']));
-			}
-			eq(null,$map);
-		 */
 	}
 }

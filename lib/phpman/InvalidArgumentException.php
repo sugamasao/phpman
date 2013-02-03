@@ -3,5 +3,5 @@ namespace phpman;
 /**
  * @author tokushima
  */
-class InvalidArgumentException extends Exception{
+class InvalidArgumentException extends \phpman\Exception{
 }

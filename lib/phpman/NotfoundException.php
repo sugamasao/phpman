@@ -3,5 +3,5 @@ namespace phpman;
 /**
  * @author tokushima
  */
-class NotfoundException extends Exception{
+class NotfoundException extends \phpman\Exception{
 }

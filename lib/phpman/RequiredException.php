@@ -3,5 +3,5 @@ namespace phpman;
 /**
  * @author tokushima
  */
-class RequiredException extends Exception{
+class RequiredException extends \phpman\Exception{
 }

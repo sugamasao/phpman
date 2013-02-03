@@ -670,80 +670,10 @@ class Object{
 	final public function __toString(){
 		return (method_exists($this,'__str__')) ? (string)$this->__str__() : get_class($this);
 	}
-	/**
-	 * クラスモジュールを追加する
-	 * @param object $o
-	 */
-	final static public function set_module($o){
-		self::$_m[2][get_called_class()][] = $o;
-	}
-	/**
-	 * 指定のクラスモジュールを実行する
-	 * @param string $n
-	 * @return mixed
-	 */
-	final static protected function module($n){
-		$r = null;
-		if(isset(self::$_m[2][$g=get_called_class()])){
-			$a = func_get_args();
-			array_shift($a);
-			
-			foreach(self::$_m[2][$g] as $k => $o){
-				if(!is_object($o) && class_exists(($c='\\'.str_replace('.','\\',$o)))) self::$_m[2][$g][$k] = $o = new $c();
-				if(method_exists($o,$n)) $r = call_user_func_array(array($o,$n),$a);
-			}
-		}
-		return $r;
-	}
-	/**
-	 * 指定のクラスモジュールが存在するか
-	 * @param string $n
-	 * @return boolean
-	 */
-	final static protected function has_module($n){
-		foreach((isset(self::$_m[2][$g=get_called_class()]) ? self::$_m[2][$g] : array()) as $k => $o){
-			if(!is_object($o) && class_exists(($c='\\'.str_replace('.','\\',$o)))) self::$_m[2][$g][$k] = $o = new $c();
-			if(method_exists($o,$n)) return true;
-		}
-		return false;
-	}
-	/**
-	 * インスタンスモジュールを追加する
-	 * @param object $o
-	 * @return mixed
-	 */
-	final public function set_object_module($o){
-		$this->_im[1][] = $o;
-		return $this;
-	}
-	/**
-	 * 
-	 * 指定のインスタンスモジュールを実行する
-	 * @param string $n
-	 * @return mixed
-	 */
-	final protected function object_module($n){
-		$r = null;
-		$a = func_get_args();
-		array_shift($a);
-		foreach($this->_im[1] as $o){
-			if(method_exists($o,$n)) $r = call_user_func_array(array($o,$n),$a);
-		}
-		return $r;
-	}
-	/**
-	 * 指定のインスタンスモジュールが存在するか
-	 * @param string $n
-	 * @return boolean
-	 */
-	final protected function has_object_module($n){
-		if(isset($this->_im[1])){
-			foreach($this->_im[1] as $o){
-				if(method_exists($o,$n)) return true;
-			}
-		}
-		return false;
-	}
+	
+	
+
+	
 	/**
 	 * プロパティのアノテーションを取得する
 	 * @param string $p プロパティ名
@@ -943,5 +873,83 @@ class Object{
 			case 'text': return (isset($v) && $v !== '');
 		}
 		return (boolean)(($this->prop_anon($this->_,'type') == 'boolean') ? $v : isset($v));
+	}
+	
+	
+	
+	
+	/**
+	 * クラスモジュールを追加する
+	 * @param object $o
+	 */
+	final static public function set_module($o){
+		self::$_m[2][get_called_class()][] = $o;
+	}
+	/**
+	 * 指定のクラスモジュールを実行する
+	 * @param string $n
+	 * @return mixed
+	 */
+	final static protected function module($n){
+		$r = null;
+		if(isset(self::$_m[2][$g=get_called_class()])){
+			$a = func_get_args();
+			array_shift($a);
+				
+			foreach(self::$_m[2][$g] as $k => $o){
+				if(!is_object($o) && class_exists(($c='\\'.str_replace('.','\\',$o)))) self::$_m[2][$g][$k] = $o = new $c();
+				if(method_exists($o,$n)) $r = call_user_func_array(array($o,$n),$a);
+			}
+		}
+		return $r;
+	}
+	/**
+	 * 指定のクラスモジュールが存在するか
+	 * @param string $n
+	 * @return boolean
+	 */
+	final static protected function has_module($n){
+		foreach((isset(self::$_m[2][$g=get_called_class()]) ? self::$_m[2][$g] : array()) as $k => $o){
+			if(!is_object($o) && class_exists(($c='\\'.str_replace('.','\\',$o)))) self::$_m[2][$g][$k] = $o = new $c();
+			if(method_exists($o,$n)) return true;
+		}
+		return false;
+	}
+	/**
+	 * インスタンスモジュールを追加する
+	 * @param object $o
+	 * @return mixed
+	 */
+	final public function set_object_module($o){
+		$this->_im[1][] = $o;
+		return $this;
+	}
+	/**
+	 *
+	 * 指定のインスタンスモジュールを実行する
+	 * @param string $n
+	 * @return mixed
+	 */
+	final protected function object_module($n){
+		$r = null;
+		$a = func_get_args();
+		array_shift($a);
+		foreach($this->_im[1] as $o){
+			if(method_exists($o,$n)) $r = call_user_func_array(array($o,$n),$a);
+		}
+		return $r;
+	}
+	/**
+	 * 指定のインスタンスモジュールが存在するか
+	 * @param string $n
+	 * @return boolean
+	 */
+	final protected function has_object_module($n){
+		if(isset($this->_im[1])){
+			foreach($this->_im[1] as $o){
+				if(method_exists($o,$n)) return true;
+			}
+		}
+		return false;
 	}
 }

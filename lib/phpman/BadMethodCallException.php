@@ -3,5 +3,5 @@ namespace phpman;
 /**
  * @author tokushima
  */
-class BadMethodCallException extends \Exception{
+class BadMethodCallException extends \phpman\Exception{
 }

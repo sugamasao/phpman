@@ -14,8 +14,8 @@ class DbConnect{
 		return get_called_class();
 	}
 	public function connect($dbname,$host,$port,$user,$password,$sock){
-		if(!extension_loaded('pdo_sqlite')) throw new RuntimeException('pdo_sqlite not supported');
-		if(empty($host) && empty($dbname)) throw new InvalidArgumentException('undef connection name');
+		if(!extension_loaded('pdo_sqlite')) throw new \phpman\RuntimeException('pdo_sqlite not supported');
+		if(empty($host) && empty($dbname)) throw new \phpman\InvalidArgumentException('undef connection name');
 		$con = null;
 
 		if(empty($host)) $host = getcwd();
@@ -26,12 +26,12 @@ class DbConnect{
 		try{
 			$con = new \PDO(sprintf('sqlite:%s',($host == ':memory:') ? ':memory:' : $host.$dbname));
 		}catch(\PDOException $e){
-			throw new ConnectionException($e->getMessage());
+			throw new \phpman\ConnectionException($e->getMessage());
 		}
 		return $con;
 	}
 	public function last_insert_id_sql(){
-		return new Daq('select last_insert_rowid() as last_insert_id;');
+		return new \phpman\Daq('select last_insert_rowid() as last_insert_id;');
 	}
 	/**
 	 * insert文を生成する
@@ -46,7 +46,7 @@ class DbConnect{
 			$insert[] = $this->quotation($column->column());
 			$vars[] = $this->update_value($dao,$column->name());
 		}
-		return new Daq('insert into '.$this->quotation($column->table()).' ('.implode(',',$insert).') values ('.implode(',',array_fill(0,sizeof($insert),'?')).');'
+		return new \phpman\Daq('insert into '.$this->quotation($column->table()).' ('.implode(',',$insert).') values ('.implode(',',array_fill(0,sizeof($insert),'?')).');'
 				,$vars
 				,$autoid
 		);
@@ -63,7 +63,7 @@ class DbConnect{
 			$where[] = $this->quotation($column->column()).' = ?';
 			$wherevars[] = $this->update_value($dao,$column->name());
 		}
-		if(empty($where)) throw new LogicException('primary not found');
+		if(empty($where)) throw new \phpman\LogicException('primary not found');
 		foreach($dao->self_columns() as $column){
 			if(!$column->primary()){
 				$update[] = $this->quotation($column->column()).' = ?';
@@ -72,7 +72,7 @@ class DbConnect{
 		}
 		$vars = array_merge($updatevars,$wherevars);
 		list($where_sql,$where_vars) = $this->where_sql($dao,$from,$query,$dao->self_columns(),null,false);
-		return new Daq(
+		return new \phpman\Daq(
 				'update '.$this->quotation($column->table()).' set '.implode(',',$update).' where '.implode(' and ',$where).(empty($where_sql) ? '' : ' and '.$where_sql)
 				,array_merge($vars,$where_vars)
 		);
@@ -88,8 +88,8 @@ class DbConnect{
 			$where[] = $this->quotation($column->column()).' = ?';
 			$vars[] = $dao->{$column->name()}();
 		}
-		if(empty($where)) throw new LogicException('not primary');
-		return new Daq(
+		if(empty($where)) throw new \phpman\LogicException('not primary');
+		return new \phpman\Daq(
 				'delete from '.$this->quotation($column->table()).' where '.implode(' and ',$where)
 				,$vars
 		);
@@ -103,7 +103,7 @@ class DbConnect{
 	public function find_delete_sql(Dao $dao,Q $query){
 		$from = array();
 		list($where_sql,$where_vars) = $this->where_sql($dao,$from,$query,$dao->self_columns(),null,false);
-		return new Daq(
+		return new \phpman\Daq(
 				'delete from '.$this->quotation($dao->table()).(empty($where_sql) ? '' : ' where '.$where_sql)
 				,$where_vars
 		);
@@ -134,9 +134,9 @@ class DbConnect{
 				}
 			}
 		}
-		if(empty($select)) throw new LogicException('select invalid');
+		if(empty($select)) throw new \phpman\LogicException('select invalid');
 		list($where_sql,$where_vars) = $this->where_sql($dao,$from,$query,$dao->self_columns(true),$this->where_cond_columns($dao->conds(),$from));
-		return new Daq(('select '.implode(',',$select).' from '.implode(',',$from)
+		return new \phpman\Daq(('select '.implode(',',$select).' from '.implode(',',$from)
 				.(empty($where_sql) ? '' : ' where '.$where_sql)
 				.$this->select_option_sql($paginator,$this->select_order($query,$self_columns))
 		)
@@ -159,7 +159,7 @@ class DbConnect{
 	protected function select_option_sql($paginator,$order){
 		return ' '
 		.(empty($order) ? '' : ' order by '.implode(',',$order))
-		.(($paginator instanceof Paginator) ? sprintf(" limit %d,%d ",$paginator->offset(),$paginator->limit()) : '')
+		.(($paginator instanceof \phpman\Paginator) ? sprintf(" limit %d,%d ",$paginator->offset(),$paginator->limit()) : '')
 		;
 	}
 	/**
@@ -239,7 +239,7 @@ class DbConnect{
 		}else{
 			$target_column = $this->get_column($target_name,$dao->columns());
 		}
-		if(empty($target_column)) throw new LogicException('undef primary');
+		if(empty($target_column)) throw new \phpman\LogicException('undef primary');
 		if(!empty($gorup_name)){
 			$group_column = $this->get_column($gorup_name,$dao->columns());
 			$select[] = $group_column->table_alias().'.'.$this->quotation($group_column->column()).' key_column';
@@ -248,7 +248,7 @@ class DbConnect{
 			$from[$column->table_alias()] = $column->table().' '.$column->table_alias();
 		}
 		list($where_sql,$where_vars) = $this->where_sql($dao,$from,$query,$dao->self_columns(true),$this->where_cond_columns($dao->conds(),$from));
-		return new Daq(('select '.$exe.'('.$target_column->table_alias().'.'.$this->quotation($target_column->column()).') target_column'
+		return new \phpman\Daq(('select '.$exe.'('.$target_column->table_alias().'.'.$this->quotation($target_column->column()).') target_column'
 					.(empty($select) ? '' : ','.implode(',',$select))
 					.' from '.implode(',',$from)
 					.(empty($where_sql) ? '' : ' where '.$where_sql)
@@ -299,7 +299,7 @@ class DbConnect{
 			return array($where_sql,$vars);
 		}
 		if($q->type() == Q::MATCH){
-			$query = new Q();
+			$query = new \phpman\Q();
 			foreach($q->ar_arg1() as $cond){
 				if(strpos($cond,'=') !== false){
 					list($column,$value) = explode('=',$cond);
@@ -334,17 +334,17 @@ class DbConnect{
 							$is_add_value = false;
 							$column_alias .= ' is null'; break;
 						}
-						$column_alias .= ' = '.(($value instanceof Daq) ? '('.$value->unique_sql().')' : '?'); break;
+						$column_alias .= ' = '.(($value instanceof \phpman\Daq) ? '('.$value->unique_sql().')' : '?'); break;
 					case Q::NEQ:
 						if($value === null){
 							$is_add_value = false;
 							$column_alias .= ' is not null'; break;
 						}
-						$column_alias .= ' <> '.(($value instanceof Daq) ? '('.$value->unique_sql().')' : '?'); break;
-					case Q::GT: $column_alias .= ' > '.(($value instanceof Daq) ? '('.$value->unique_sql().')' : '?'); break;
-					case Q::GTE: $column_alias .= ' >= '.(($value instanceof Daq) ? '('.$value->unique_sql().')' : '?'); break;
-					case Q::LT: $column_alias .= ' < '.(($value instanceof Daq) ? '('.$value->unique_sql().')' : '?'); break;
-					case Q::LTE: $column_alias .= ' <= '.(($value instanceof Daq) ? '('.$value->unique_sql().')' : '?'); break;
+						$column_alias .= ' <> '.(($value instanceof \phpman\Daq) ? '('.$value->unique_sql().')' : '?'); break;
+					case Q::GT: $column_alias .= ' > '.(($value instanceof \phpman\Daq) ? '('.$value->unique_sql().')' : '?'); break;
+					case Q::GTE: $column_alias .= ' >= '.(($value instanceof \phpman\Daq) ? '('.$value->unique_sql().')' : '?'); break;
+					case Q::LT: $column_alias .= ' < '.(($value instanceof \phpman\Daq) ? '('.$value->unique_sql().')' : '?'); break;
+					case Q::LTE: $column_alias .= ' <= '.(($value instanceof \phpman\Daq) ? '('.$value->unique_sql().')' : '?'); break;
 					case Q::CONTAINS:
 					case Q::START_WITH:
 					case Q::END_WITH:
@@ -356,13 +356,13 @@ class DbConnect{
 						break;
 					case Q::IN:
 						$column_alias .= ($q->not() ? ' not' : '')
-						.(($value instanceof Daq) ?
+						.(($value instanceof \phpman\Daq) ?
 						' in('.$value->unique_sql().')' :
 						' in('.substr(str_repeat('?,',sizeof($value)),0,-1).')'
 						);
 						break;
 				}
-				if($value instanceof Daq){
+				if($value instanceof \phpman\Daq){
 					$is_add_value = false;
 					$vars = array_merge($vars,$value->ar_vars());
 				}
@@ -403,7 +403,7 @@ class DbConnect{
 		foreach($self_columns as $c){
 			if($c->name() == $column_str) return $c;
 		}
-		throw new LogicException('undef '.$column_str);
+		throw new \phpman\LogicException('undef '.$column_str);
 	}
 	protected function column_alias_sql(Dao $dao,Column $column,Q $q,$alias=true){
 		$column_str = ($alias) ? $column->table_alias().'.'.$this->quotation($column->column()) : $this->quotation($column->column());
@@ -445,7 +445,7 @@ class DbConnect{
 				case 'integer': return $quote($name).' INTEGER';
 				case 'email':
 				case 'choice': return $quote($name).' TEXT';
-				default: throw new InvalidArgumentException('undefined type `'.$type.'`');
+				default: throw new \phpman\InvalidArgumentException('undefined type `'.$type.'`');
 			}
 		};
 		$columndef = $primary = array();

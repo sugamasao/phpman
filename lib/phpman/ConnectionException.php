@@ -3,5 +3,5 @@ namespace phpman;
 /**
  * @author tokushima
  */
-class ConnectionException extends Exception{
+class ConnectionException extends \phpman\Exception{
 }

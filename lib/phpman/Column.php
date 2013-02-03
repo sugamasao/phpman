@@ -8,7 +8,7 @@ namespace phpman;
  * @var boolean $auto
  * @var boolean $base
  */
-class Column extends Object{
+class Column extends \phpman\Object{
 	protected $name;
 	protected $column;
 	protected $column_alias;

@@ -1,10 +1,10 @@
 <?php
-namespace phpman;
+namespace robin\db;
 /**
  * Mysqlモジュール
  * @author tokushima
  */
-class DbConnectMysql extends DbConnect{
+class DbConnectMysql extends \phpman\DbConnect{
 	protected $order_random_str = 'rand()';
 	
 	/**
@@ -16,10 +16,10 @@ class DbConnectMysql extends DbConnect{
 	 * @param string $sock
 	 */
 	public function connect($name,$host,$port,$user,$password,$sock){
-		if(!extension_loaded('pdo_mysql')) throw new RuntimeException('pdo_mysql not supported');
+		if(!extension_loaded('pdo_mysql')) throw new \phpman\RuntimeException('pdo_mysql not supported');
 		$con = null;
 		if(empty($host)) $host = 'localhost';
-		if(empty($name)) throw new \InvalidArgumentException('undef connection name');
+		if(empty($name)) throw new \phpman\InvalidArgumentException('undef connection name');
 		$dsn = empty($sock) ?
 					sprintf('mysql:dbname=%s;host=%s;port=%d',$name,$host,((empty($port) ? 3306 : $port))) :
 					sprintf('mysql:dbname=%s;unix_socket=%s',$name,$sock);
@@ -29,7 +29,7 @@ class DbConnectMysql extends DbConnect{
 			$this->prepare_execute($con,'set autocommit=0');
 			$this->prepare_execute($con,'set session transaction isolation level read committed');
 		}catch(\PDOException $e){
-			throw new ConnectionException((strpos($e->getMessage(),'SQLSTATE[HY000]') === false) ? $e->getMessage() : 'not supported '.__CLASS__);
+			throw new \phpman\ConnectionException((strpos($e->getMessage(),'SQLSTATE[HY000]') === false) ? $e->getMessage() : 'not supported '.__CLASS__);
 		}
 		return $con;
 	}
@@ -37,7 +37,7 @@ class DbConnectMysql extends DbConnect{
 		$st = $con->prepare($sql);
 		$st->execute();
 		$error = $st->errorInfo();
-		if((int)$error[0] !== 0) throw new InvalidArgumentException($error[2]);
+		if((int)$error[0] !== 0) throw new \phpman\InvalidArgumentException($error[2]);
 	}
 	public function last_insert_id_sql(){
 		return Daq::get('select last_insert_id() as last_insert_id;');
@@ -45,7 +45,7 @@ class DbConnectMysql extends DbConnect{
 	/**
 	 * create table
 	 */
-	public function create_table_sql(Dao $dao){
+	public function create_table_sql(\phpman\Dao $dao){
 		$quote = function($name){
 			return '`'.$name.'`';
 		};
@@ -69,7 +69,7 @@ class DbConnectMysql extends DbConnect{
 				case 'integer': return $quote($name).' int';
 				case 'email': return $quote($name).' varchar(255)';
 				case 'choice': return $quote($name).' varchar(255)';
-				default: throw new \InvalidArgumentException('undefined type `'.$type.'`');
+				default: throw new exception\InvalidArgumentException('undefined type `'.$type.'`');
 			}
 		};
 		$columndef = $primary = array();
@@ -88,7 +88,7 @@ class DbConnectMysql extends DbConnect{
 		$sql .= ' ) engine = InnoDB character set utf8 collate utf8_general_ci;'.PHP_EOL;
 		return $sql;
 	}
-	public function exists_table_sql(Dao $dao){
+	public function exists_table_sql(\phpman\Dao $dao){
 		return sprintf('select count(*) from information_schema.tables where table_name = \'%s\'',$dai->table());
 	}
 }

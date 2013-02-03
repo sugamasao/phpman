@@ -3,5 +3,5 @@ namespace phpman;
 /**
  * @author tokushima
  */
-class LogicException extends Exception{
+class LogicException extends \phpman\Exception{
 }
