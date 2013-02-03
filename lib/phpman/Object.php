@@ -4,8 +4,8 @@ namespace phpman;
  * 基底クラス
  * @author tokushima
  */
-class Object{
-	static private $_m = array(array(),array(),array());
+class Object extends \phpman\ExtensionModule{
+	static private $_m = array(array(),array());
 	private $_im = array(array(),array());
 	protected $_;
 
@@ -718,6 +718,22 @@ class Object{
 		*/
 	}
 	/**
+	 * プロパティに値をセットする
+	 * @param string $name
+	 * @param string $type
+	 * @param mixed $value
+	 * @throws \InvalidArgumentException
+	 */
+	protected function set_prop($name,$type,$value){
+		try{
+			$c = get_class($this);
+			return \phpman\Validation::set($type,$value,isset(self::$_m[0][$c][$name]) ? self::$_m[0][$c][$name] : array());
+		}catch(\InvalidArgumentException $e){
+			throw new \InvalidArgumentException($this->_.' must be an '.$type);
+		}
+	}
+	
+	/**
 	 * 連想配列としての値を返す
 	 * @return array
 	 */
@@ -797,21 +813,6 @@ class Object{
 		}
 		return $this;
 	}
-	/**
-	 * プロパティに値をセットする
-	 * @param string $name
-	 * @param string $type
-	 * @param mixed $value
-	 * @throws \InvalidArgumentException
-	 */
-	protected function set_prop($name,$type,$value){
-		try{
-			$c = get_class($this);
-			return Validation::set($type,$value,isset(self::$_m[0][$c][$name]) ? self::$_m[0][$c][$name] : array());
-		}catch(\InvalidArgumentException $e){
-			throw new \InvalidArgumentException($this->_.' must be an '.$type);
-		}
-	}
 	final private function ___rm___(){
 		if($this->prop_anon($this->_,'set') === false) throw new \InvalidArgumentException('not permitted');
 		if($this->prop_anon($this->_,'attr') === null){
@@ -875,46 +876,7 @@ class Object{
 		return (boolean)(($this->prop_anon($this->_,'type') == 'boolean') ? $v : isset($v));
 	}
 	
-	
-	
-	
-	/**
-	 * クラスモジュールを追加する
-	 * @param object $o
-	 */
-	final static public function set_module($o){
-		self::$_m[2][get_called_class()][] = $o;
-	}
-	/**
-	 * 指定のクラスモジュールを実行する
-	 * @param string $n
-	 * @return mixed
-	 */
-	final static protected function module($n){
-		$r = null;
-		if(isset(self::$_m[2][$g=get_called_class()])){
-			$a = func_get_args();
-			array_shift($a);
-				
-			foreach(self::$_m[2][$g] as $k => $o){
-				if(!is_object($o) && class_exists(($c='\\'.str_replace('.','\\',$o)))) self::$_m[2][$g][$k] = $o = new $c();
-				if(method_exists($o,$n)) $r = call_user_func_array(array($o,$n),$a);
-			}
-		}
-		return $r;
-	}
-	/**
-	 * 指定のクラスモジュールが存在するか
-	 * @param string $n
-	 * @return boolean
-	 */
-	final static protected function has_module($n){
-		foreach((isset(self::$_m[2][$g=get_called_class()]) ? self::$_m[2][$g] : array()) as $k => $o){
-			if(!is_object($o) && class_exists(($c='\\'.str_replace('.','\\',$o)))) self::$_m[2][$g][$k] = $o = new $c();
-			if(method_exists($o,$n)) return true;
-		}
-		return false;
-	}
+
 	/**
 	 * インスタンスモジュールを追加する
 	 * @param object $o

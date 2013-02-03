@@ -8,7 +8,7 @@ namespace phpman;
  * @conf string $session_limiter キャッシュリミッタ nocache,private,private_no_expire,public
  * @conf integer $session_expire キャッシュの有効期限(sec)
  */
-class Session extends Object{
+class Session extends \phpman\ExtensionModule{
 	private $ses_n;
 
 	/**
