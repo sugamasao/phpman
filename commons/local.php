@@ -1,4 +1,4 @@
 <?php
-use \phpman\Conf;
+date_default_timezone_set('Asia/Tokyo');
 
 
