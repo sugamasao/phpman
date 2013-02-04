@@ -11,6 +11,9 @@ namespace phpman;
  * @conf boolean $display_exception 例外が発生した場合にメッセージを表示するか
  */
 class Template extends Object{
+	use \phpman\Module;
+	use \phpman\InstanceModule;
+	
 	private $file;
 	private $selected_template;
 	private $selected_src;

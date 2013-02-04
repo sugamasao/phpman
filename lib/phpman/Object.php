@@ -4,9 +4,9 @@ namespace phpman;
  * 基底クラス
  * @author tokushima
  */
-class Object extends \phpman\ExtensionModule{
+class Object{
 	static private $_m = array(array(),array());
-	private $_im = array(array(),array());
+	private $_im = array();
 	protected $_;
 
 	/**
@@ -40,14 +40,7 @@ class Object extends \phpman\ExtensionModule{
 		$result = array();
 		$decode_func = function($s){
 			if(empty($s)) return array();
-			if(PHP_MAJOR_VERSION > 5 || PHP_MINOR_VERSION > 3){
-				$d = @eval('return '.$s.';');
-			}else{
-				if(preg_match_all('/([\"\']).+?\\1/',$s,$m)){
-					foreach($m[0] as $v) $s = str_replace($v,str_replace(array('[',']'),array('#{#','#}#'),$v),$s);
-				}
-				$d = @eval('return '.str_replace(array('[',']','#{#','#}#'),array('array(',')','[',']'),$s).';');
-			}
+			$d = @eval('return '.$s.';');
 			if(!is_array($d)) throw new \InvalidArgumentException('annotation error : `'.$s.'`');
 			return $d;
 		};
@@ -683,8 +676,8 @@ class Object extends \phpman\ExtensionModule{
 	 * @return mixed
 	 */
 	final public function prop_anon($p,$n,$d=null,$f=false){
-		if($f) $this->_im[0][$p][$n] = $d;
-		$v = isset($this->_im[0][$p][$n]) ? $this->_im[0][$p][$n] : ((isset(self::$_m[0][get_class($this)][$p][$n])) ? self::$_m[0][get_class($this)][$p][$n] : $d);
+		if($f) $this->_im[$p][$n] = $d;
+		$v = isset($this->_im[$p][$n]) ? $this->_im[$p][$n] : ((isset(self::$_m[0][get_class($this)][$p][$n])) ? self::$_m[0][get_class($this)][$p][$n] : $d);
 		if(is_string($v) && $d !== $v) $v = preg_replace('/array\((.+?)\)/','[\\1]',$v);
 		return $v;
 	}
@@ -874,44 +867,5 @@ class Object extends \phpman\ExtensionModule{
 			case 'text': return (isset($v) && $v !== '');
 		}
 		return (boolean)(($this->prop_anon($this->_,'type') == 'boolean') ? $v : isset($v));
-	}
-	
-
-	/**
-	 * インスタンスモジュールを追加する
-	 * @param object $o
-	 * @return mixed
-	 */
-	final public function set_object_module($o){
-		$this->_im[1][] = $o;
-		return $this;
-	}
-	/**
-	 *
-	 * 指定のインスタンスモジュールを実行する
-	 * @param string $n
-	 * @return mixed
-	 */
-	final protected function object_module($n){
-		$r = null;
-		$a = func_get_args();
-		array_shift($a);
-		foreach($this->_im[1] as $o){
-			if(method_exists($o,$n)) $r = call_user_func_array(array($o,$n),$a);
-		}
-		return $r;
-	}
-	/**
-	 * 指定のインスタンスモジュールが存在するか
-	 * @param string $n
-	 * @return boolean
-	 */
-	final protected function has_object_module($n){
-		if(isset($this->_im[1])){
-			foreach($this->_im[1] as $o){
-				if(method_exists($o,$n)) return true;
-			}
-		}
-		return false;
 	}
 }

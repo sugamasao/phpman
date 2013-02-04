@@ -13,6 +13,8 @@ namespace phpman;
  * @conf boolean $disp 標準出力に出すか
  */
 class Log extends Object{
+	use \phpman\Module;
+	
 	static private $stdout = true;
 	static private $level_strs = array('none','error','warn','info','debug');
 	static private $logs = array();

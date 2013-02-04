@@ -8,7 +8,8 @@ namespace phpman;
  * @conf string $session_limiter キャッシュリミッタ nocache,private,private_no_expire,public
  * @conf integer $session_expire キャッシュの有効期限(sec)
  */
-class Session extends \phpman\ExtensionModule{
+class Session{
+	use \phpman\Module;
 	private $ses_n;
 
 	/**
@@ -16,7 +17,7 @@ class Session extends \phpman\ExtensionModule{
 	 * @param string $name
 	 * @return $this
 	 */
-	protected function __new__($name='sess'){
+	public function __construct($name='sess'){
 		$this->ses_n = $name;
 		if('' === session_id()){
 			$session_name = \org\rhaco\Conf::get('session_name','SID');

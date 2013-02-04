@@ -10,7 +10,7 @@ spl_autoload_register(function($c){
 			){
 				require_once($f);
 				
-				if(class_exists($c,false) || interface_exists($c,false)){
+				if(class_exists($c,false) || interface_exists($c,false) || trait_exists($c,false)){
 					if(method_exists($c,'__import__') && ($i = new ReflectionMethod($c,'__import__')) && $i->isStatic()) $c::__import__();
 					if(method_exists($c,'__shutdown__') && ($i = new ReflectionMethod($c,'__shutdown__')) && $i->isStatic()) register_shutdown_function(array($c,'__shutdown__'));
 					return true;
