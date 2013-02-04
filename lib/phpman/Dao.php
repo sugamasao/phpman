@@ -10,7 +10,7 @@ abstract class Dao extends \phpman\Object{
 	static private $_dao_ = array();
 	static private $_cnt_ = 0;	
 
-	private $_has_hierarchy_ = 1;	
+	private $_has_hierarchy_ = 1;
 	private $_class_id_;
 	private $_hierarchy_;
 

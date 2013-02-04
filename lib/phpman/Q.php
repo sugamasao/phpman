@@ -59,7 +59,7 @@ class Q{
 		return is_array($v) ? $v : (($v === null) ? array() : array($v));
 	}
 	public function is_arg1(){
-		return !empty($this->arg1);
+		return (isset($this->arg1) && $this->arg1 !== '');
 	}
 	public function ar_arg1(){
 		if(empty($this->arg1)) return array();
@@ -78,7 +78,7 @@ class Q{
 		return $this->ar_value($this->arg2);
 	}
 	public function is_arg2(){
-		return !empty($this->arg2);
+		return (isset($this->arg2) && $this->arg2 !== '');
 	}
 	public function type(){
 		return $this->type;
