@@ -100,7 +100,7 @@ class Template{
 			if(!empty($this->put_block)){
 				$src = $this->read_src($this->put_block);
 				if(strpos($src,'rt:extends') !== false){
-					Xml::set($x,'<:>'.$src.'</:>');
+					\phpman\Xml::set($x,'<:>'.$src.'</:>');
 					foreach($x->in('rt:extends') as $ext) $src = str_replace($ext->plain(),'',$src);
 				}
 				$src = sprintf('<rt:extends href="%s" />\n',$file).$src;
@@ -168,25 +168,26 @@ class Template{
 		 * テンプレート作成の初期化
 		 * @param phpman.String $obj
 		 */
-		$this->object_module('init_template',String::ref($obj,$src));
+		$this->object_module('init_template',\phpman\String::ref($obj,$src));
 		$src = $this->rtcomment($this->rtblock($this->rttemplate((string)$obj),$this->file));
 		$this->selected_src = $src;
 		/**
 		 * テンプレート作成の前処理
 		 * @param phpman.String $obj
 		 */
-		$this->object_module('before_template',String::ref($obj,$src));
+		$this->object_module('before_template',\phpman\String::ref($obj,$src));
 		$src = $this->rtif($this->rtloop($this->rtunit($this->html_form($this->html_list((string)$obj)))));
 		/**
 		 * テンプレート作成の後処理
 		 * @param phpman.String $obj
 		 */
-		$this->object_module('after_template',String::ref($obj,$src));
+		$this->object_module('after_template',\phpman\String::ref($obj,$src));
 		$src = str_replace('__PHP_ARROW__','->',(string)$obj);
 		$src = $this->parse_print_variable($src);
 		$php = array(' ?>','<?php ','->');
 		$str = array('__PHP_TAG_END__','__PHP_TAG_START__','__PHP_ARROW__');
 		$src = str_replace($php,$str,$src);
+		// TODO
 		$src = $this->parse_url($src,$this->media_url);
 		$src = str_replace($str,$php,$src);
 		$src = str_replace(array('__ESC_DQ__','__ESC_SQ__','__ESC_DESC__'),array("\\\"","\\'","\\\\"),$src);
@@ -197,11 +198,11 @@ class Template{
 		 * 実行前処理
 		 * @param phpman.String $obj
 		 */
-		$this->object_module('before_exec_template',String::ref($_obj_,$_src_));
+		$this->object_module('before_exec_template',\phpman\String::ref($_obj_,$_src_));
 		$this->vars('_t_',new \phpman\TemplateHelper());
 		ob_start();
 			if(is_array($this->vars) && !empty($this->vars)) extract($this->vars);
-			eval('?><?php $_display_exception_='.((Conf::get('display_exception') === true) ? 'true' : 'false').'; ?>'.((string)$_obj_));
+			eval('?><?php $_display_exception_='.((\phpman\Conf::get('display_exception') === true) ? 'true' : 'false').'; ?>'.((string)$_obj_));
 		$_eval_src_ = ob_get_clean();
 
 		if(strpos($_eval_src_,'Parse error: ') !== false){
@@ -209,11 +210,11 @@ class Template{
 				list($msg,$line) = array(trim($match[1]),((int)$match[2]));
 				$lines = explode("\n",$_src_);
 				$plrp = substr_count(implode("\n",array_slice($lines,0,$line)),"<?php 'PLRP'; ?>\n");
-				Log::error($msg.' on line '.($line-$plrp).' [compile]: '.trim($lines[$line-1]));
+				\phpman\Log::error($msg.' on line '.($line-$plrp).' [compile]: '.trim($lines[$line-1]));
 
 				$lines = explode("\n",$this->selected_src);
-				Log::error($msg.' on line '.($line-$plrp).' [plain]: '.trim($lines[$line-1-$plrp]));
-				if(Conf::get('display_exception') === true) $_eval_src_ = $msg.' on line '.($line-$plrp).': '.trim($lines[$line-1-$plrp]);
+				\phpman\Log::error($msg.' on line '.($line-$plrp).' [plain]: '.trim($lines[$line-1-$plrp]));
+				if(\phpman\Conf::get('display_exception') === true) $_eval_src_ = $msg.' on line '.($line-$plrp).': '.trim($lines[$line-1-$plrp]);
 			}
 		}
 		$_src_ = $this->selected_src = null;
@@ -221,7 +222,7 @@ class Template{
 		 * 実行後処理
 		 * @param phpman.String $obj
 		 */
-		$this->object_module('after_exec_template',String::ref($_obj_,$_eval_src_));
+		$this->object_module('after_exec_template',\phpman\String::ref($_obj_,$_eval_src_));
 		return (string)$_obj_;
 	}
 	private function error_handler($errno,$errstr,$errfile,$errline){
@@ -295,7 +296,7 @@ class Template{
 	private function rttemplate($src){
 		$values = array();
 		$bool = false;
-		while(Xml::set($tag,$src,'rt:template')){
+		while(\phpman\Xml::set($tag,$src,'rt:template')){
 			$src = str_replace($tag->plain(),'',$src);
 			$values[$tag->in_attr('name')] = $tag->value();
 			$src = str_replace($tag->plain(),'',$src);
@@ -311,11 +312,11 @@ class Template{
 		if(strpos($src,'rt:block') !== false || strpos($src,'rt:extends') !== false){
 			$base_filename = $filename;
 			$blocks = $paths = array();
-			while(Xml::set($e,'<:>'.$this->rtcomment($src).'</:>','rt:extends') !== false){
+			while(\phpman\Xml::set($e,'<:>'.$this->rtcomment($src).'</:>','rt:extends') !== false){
 				$href = $this->ab_path(str_replace("\\",'/',dirname($filename)),$e->in_attr('href'));
 				if(!$e->is_attr('href') || !is_file($href)) throw new \LogicException('href not found '.$filename);
 				if($filename === $href) throw new \LogicException('Infinite Recursion Error'.$filename);
-				Xml::set($bx,'<:>'.$this->rtcomment($src).'</:>',':');
+				\phpman\Xml::set($bx,'<:>'.$this->rtcomment($src).'</:>',':');
 				foreach($bx->in('rt:block') as $b){
 					$n = $b->in_attr('name');
 					if(!empty($n) && !array_key_exists($n,$blocks)){
@@ -330,15 +331,15 @@ class Template{
 			 * ブロック展開の前処理
 			 * @param phpman.String $obj
 			 */
-			$this->object_module('before_block_template',String::ref($obj,$src));
+			$this->object_module('before_block_template',\phpman\String::ref($obj,$src));
 			$src = (string)$obj;
 			if(empty($blocks)){
-				if(Xml::set($bx,'<:>'.$src.'</:>')){
+				if(\phpman\Xml::set($bx,'<:>'.$src.'</:>')){
 					foreach($bx->in('rt:block') as $b) $src = str_replace($b->plain(),$b->value(),$src);
 				}
 			}else{
 				if(!empty($this->template_super)) $src = $this->read_src($this->ab_path(str_replace("\\",'/',dirname($base_filename)),$this->template_super));
-				while(Xml::set($b,$src,'rt:block')){
+				while(\phpman\Xml::set($b,$src,'rt:block')){
 					$n = $b->in_attr('name');
 					$src = str_replace($b->plain(),(array_key_exists($n,$blocks) ? $blocks[$n] : $b->value()),$src);
 				}
@@ -348,7 +349,7 @@ class Template{
 		return $src;
 	}
 	private function rtcomment($src){
-		while(Xml::set($tag,$src,'rt:comment')) $src = str_replace($tag->plain(),'',$src);
+		while(\phpman\Xml::set($tag,$src,'rt:comment')) $src = str_replace($tag->plain(),'',$src);
 		return $src;
 		/***
 			$src = '123<rt:comment>aaaaaaaa</rt:comment>456';
@@ -358,7 +359,7 @@ class Template{
 	}
 	private function rtunit($src){
 		if(strpos($src,'rt:unit') !== false){
-			while(Xml::set($tag,$src,'rt:unit')){
+			while(\phpman\Xml::set($tag,$src,'rt:unit')){
 				$tag->escape(false);
 				$uniq = uniqid('');
 				$param = $tag->in_attr('param');
@@ -458,7 +459,7 @@ class Template{
 	}
 	private function rtloop($src){
 		if(strpos($src,'rt:loop') !== false){
-			while(Xml::set($tag,$src,'rt:loop')){
+			while(\phpman\Xml::set($tag,$src,'rt:loop')){
 				$tag->escape(false);
 				$param = ($tag->is_attr('param')) ? $this->variable_string($this->parse_plain_variable($tag->in_attr('param'))) : null;
 				$offset = ($tag->is_attr('offset')) ? (ctype_digit($tag->in_attr('offset')) ? $tag->in_attr('offset') : $this->variable_string($this->parse_plain_variable($tag->in_attr('offset')))) : 1;
@@ -499,24 +500,24 @@ class Template{
 
 				$value = $tag->value();
 				$empty_value = null;
-				while(Xml::set($subtag,$value,'rt:loop')){
+				while(\phpman\Xml::set($subtag,$value,'rt:loop')){
 					$value = $this->rtloop($value);
 				}
-				while(Xml::set($subtag,$value,'rt:first')){
+				while(\phpman\Xml::set($subtag,$value,'rt:first')){
 					$value = str_replace($subtag->plain(),sprintf('<?php if(isset(%s)%s){ ?>%s<?php } ?>',$first
 					,(($subtag->in_attr('last') === 'false') ? sprintf(' && (%s !== 1) ',$total) : '')
 					,preg_replace("/<rt\:else[\s]*.*?>/i","<?php }else{ ?>",$this->rtloop($subtag->value()))),$value);
 				}
-				while(Xml::set($subtag,$value,'rt:middle')){
+				while(\phpman\Xml::set($subtag,$value,'rt:middle')){
 					$value = str_replace($subtag->plain(),sprintf('<?php if(!isset(%s) && !isset(%s)){ ?>%s<?php } ?>',$first,$last
 					,preg_replace("/<rt\:else[\s]*.*?>/i","<?php }else{ ?>",$this->rtloop($subtag->value()))),$value);
 				}
-				while(Xml::set($subtag,$value,'rt:last')){
+				while(\phpman\Xml::set($subtag,$value,'rt:last')){
 					$value = str_replace($subtag->plain(),sprintf('<?php if(isset(%s)%s){ ?>%s<?php } ?>',$last
 					,(($subtag->in_attr('first') === 'false') ? sprintf(' && (%s !== 1) ',$vtotal) : '')
 					,preg_replace("/<rt\:else[\s]*.*?>/i","<?php }else{ ?>",$this->rtloop($subtag->value()))),$value);
 				}
-				while(Xml::set($subtag,$value,'rt:fill')){
+				while(\phpman\Xml::set($subtag,$value,'rt:fill')){
 					$is_fill = true;
 					$value = str_replace($subtag->plain(),sprintf('<?php if(%s > %s){ ?>%s<?php } ?>',$lcountname,$total
 					,preg_replace("/<rt\:else[\s]*.*?>/i","<?php }else{ ?>",$this->rtloop($subtag->value()))),$value);
@@ -821,7 +822,7 @@ class Template{
 	}
 	private function rtif($src){
 		if(strpos($src,'rt:if') !== false){
-			while(Xml::set($tag,$src,'rt:if')){
+			while(\phpman\Xml::set($tag,$src,'rt:if')){
 				$tag->escape(false);
 				if(!$tag->is_attr('param')) throw new \LogicException('if');
 				$arg1 = $this->variable_string($this->parse_plain_variable($tag->in_attr('param')));
@@ -985,7 +986,7 @@ class Template{
 	}
 	private function html_reform($src){
 		if(strpos($src,'rt:aref') !== false){
-			Xml::set($tag,'<:>'.$src.'</:>');
+			\phpman\Xml::set($tag,'<:>'.$src.'</:>');
 			foreach($tag->in('form') as $obj){
 				if($obj->is_attr('rt:aref')){
 					$bool = ($obj->in_attr('rt:aref') === 'true');
@@ -1016,7 +1017,7 @@ class Template{
 		return $src;
 	}
 	private function html_form($src){
-		Xml::set($tag,'<:>'.$src.'</:>');
+		\phpman\Xml::set($tag,'<:>'.$src.'</:>');
 		foreach($tag->in('form') as $obj){
 			if($this->is_reference($obj)){
 				$obj->escape(false);
@@ -1045,7 +1046,7 @@ class Template{
 		return '<?php $_nes_=1; ?>'.$value.'<?php $_nes_=null; ?>';
 	}
 	private function html_input($src){
-		Xml::set($tag,'<:>'.$src.'</:>');
+		\phpman\Xml::set($tag,'<:>'.$src.'</:>');
 		foreach($tag->in(array('input','textarea','select')) as $obj){
 			if('' != ($originalName = $obj->in_attr('name',$obj->in_attr('id','')))){
 				$obj->escape(false);
@@ -1427,7 +1428,7 @@ class Template{
 		if(preg_match_all('/<(table|ul|ol)\s[^>]*rt\:/i',$src,$m,PREG_OFFSET_CAPTURE)){
 			$tags = array();
 			foreach($m[1] as $k => $v){
-				if(Xml::set($tag,substr($src,$v[1]-1),$v[0])) $tags[] = $tag;
+				if(\phpman\Xml::set($tag,substr($src,$v[1]-1),$v[0])) $tags[] = $tag;
 			}
 			foreach($tags as $obj){
 				$obj->escape(false);
@@ -1448,7 +1449,7 @@ class Template{
 								,$tag->in_attr('rt:shortfall','_DEFI_'.uniqid())
 							);
 				$rawvalue = $obj->value();
-				if($name == 'table' && Xml::set($t,$rawvalue,'tbody')){
+				if($name == 'table' && \phpman\Xml::set($t,$rawvalue,'tbody')){
 					$t->escape(false);
 					$t->value($value.$this->table_tr_even_odd($t->value(),(($name == 'table') ? 'tr' : 'li'),$obj->in_attr('rt:evenodd','loop_evenodd')).'</rt:loop>');
 					$value = str_replace($t->plain(),$t->get(),$rawvalue);
@@ -1675,7 +1676,7 @@ class Template{
 		*/
 	}
 	private function table_tr_even_odd($src,$name,$even_odd){
-		Xml::set($tag,'<:>'.$src.'</:>');
+		\phpman\Xml::set($tag,'<:>'.$src.'</:>');
 		foreach($tag->in($name) as $tr){
 			$tr->escape(false);
 			$class = ' '.$tr->in_attr('class').' ';
