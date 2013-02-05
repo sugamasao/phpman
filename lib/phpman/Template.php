@@ -10,22 +10,55 @@ namespace phpman;
  * @var string $media_url メディアファイルへのURLの基点
  * @conf boolean $display_exception 例外が発生した場合にメッセージを表示するか
  */
-class Template extends Object{
-	use \phpman\Module;
+class Template{
+	use \phpman\StaticModule;
 	use \phpman\InstanceModule;
 	
 	private $file;
 	private $selected_template;
 	private $selected_src;
 
-	protected $secure = false;
-	protected $vars = array();
-	protected $put_block;
-	protected $template_super;
-	protected $media_url;
+	private $secure = false;
+	private $vars = array();
+	private $put_block;
+	private $template_super;
+	private $media_url;
 
-	protected function __new__($media_url=null){
+	public function __construct($media_url=null){
 		if($media_url !== null) $this->media_url($media_url);
+	}
+	public function secure($bool=null){
+		if($bool !== null) $this->secure = (boolean)$bool;
+		return $this->secure;
+	}
+	public function vars($k=null,$v=null){
+		if($k !== null) $this->vars[$k] = $v;
+		return $this->vars;
+	}
+	public function in_vars($k,$d=null){
+		return isset($this->vars[$k]) ? $this->vars[$k] : $d;
+	}
+	public function rm_vars($k=null){
+		if($k === null){
+			$this->vars = array();
+		}else if(isset($this->vars[$k])){
+			unset($this->vars[$k]);
+		}
+	}
+	public function put_block($v=null){
+		if($v !== null) $this->put_block = $v;
+		return $this->put_block;
+	}
+	public function template_super($v=null){
+		if($v !== null) $this->template_super = $v;
+		return $this->template_super;
+	}
+	public function media_url($v=null){
+		if($v !== null){
+			$this->media_url = str_replace('\\','/',$v);
+			if(!empty($this->media_url) && substr($this->media_url,-1) !== '/') $this->media_url = $this->media_url.'/';
+		}
+		return $this->media_url;
 	}
 	/**
 	 * 配列からテンプレート変数に値をセットする
@@ -38,15 +71,6 @@ class Template extends Object{
 			throw new \InvalidArgumentException('must be an of array');
 		}
 		return $this;
-	}
-	/**
-	 * メディアファイルへのURLの基点を設定
-	 * @param string $url
-	 * @return $this
-	 */
-	protected function __set_media_url__($url){
-		$this->media_url = str_replace("\\",'/',$url);
-		if(!empty($this->media_url) && substr($this->media_url,-1) !== '/') $this->media_url = $this->media_url.'/';
 	}
 	/**
 	 * 出力する

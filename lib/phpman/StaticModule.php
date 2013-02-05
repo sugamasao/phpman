@@ -1,7 +1,7 @@
 <?php
 namespace phpman;
 
-trait Module{
+trait StaticModule{
 	static private $_module = array();
 	
 	static public function set_module($object){

@@ -7,7 +7,7 @@ namespace phpman;
  * @conf mixed{} $connection 接続設定
  */
 abstract class Dao extends \phpman\Object{
-	use \phpman\Module;
+	use \phpman\StaticModule;
 	
 	static private $_dao_ = array();
 	static private $_cnt_ = 0;	

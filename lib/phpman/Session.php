@@ -9,7 +9,7 @@ namespace phpman;
  * @conf integer $session_expire キャッシュの有効期限(sec)
  */
 class Session{
-	use \phpman\Module;
+	use \phpman\StaticModule;
 	private $ses_n;
 
 	/**

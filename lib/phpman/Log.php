@@ -12,8 +12,8 @@ namespace phpman;
  * @conf string $level ログレベル (none,error,warn,info,debug)
  * @conf boolean $disp 標準出力に出すか
  */
-class Log extends Object{
-	use \phpman\Module;
+class Log{
+	use \phpman\StaticModule;
 	
 	static private $stdout = true;
 	static private $level_strs = array('none','error','warn','info','debug');
@@ -22,12 +22,12 @@ class Log extends Object{
 	static private $current_level;
 	static private $disp;
 
-	protected $level;
-	protected $time;
-	protected $file;
-	protected $line;
-	protected $value;
-
+	private $level;
+	private $time;
+	private $file;
+	private $line;
+	private $value;
+	
 	static public function __import__(){
 		self::$id = base_convert(date('md'),10,36).base_convert(date('G'),10,36).base_convert(mt_rand(1296,46655),10,36);
 		self::$logs[] = new self(4,'--- logging start '
@@ -52,7 +52,7 @@ class Log extends Object{
 		if(self::$disp === null) self::$disp = (boolean)Conf::get('disp',false);
 		return self::$disp;
 	}
-	final protected function __new__($level,$value,$file=null,$line=null,$time=null){
+	public function __construct($level,$value,$file=null,$line=null,$time=null){
 		$class = null;
 		if($file === null){
 			$debugs = debug_backtrace(false);
@@ -77,7 +77,7 @@ class Log extends Object{
 							)
 							: $value;
 	}
-	protected function __fm_value__(){
+	public function fm_value(){
 		if(!is_string($this->value)){
 			ob_start();
 				var_dump($this->value);
@@ -85,14 +85,26 @@ class Log extends Object{
 		}
 		return $this->value;
 	}
-	protected function __fm_level__(){
-		return ($this->level() >= 0) ? self::$level_strs[$this->level()] : 'trace';
+	public function fm_level(){
+		return ($this->level >= 0) ? self::$level_strs[$this->level] : 'trace';
 	}
-	protected function __get_time__($format='Y/m/d H:i:s'){
+	public function level(){
+		return $this->level;
+	}
+	public function time($format='Y/m/d H:i:s'){
 		return (empty($format)) ? $this->time : date($format,$this->time);
 	}
-	protected function __str__(){
-		return '['.$this->time().']'.'['.self::$id.']'.'['.$this->fm_level().']'.':['.$this->file().':'.$this->line().']'.' '.$this->fm_value();
+	public function file(){
+		return $this->file;
+	}
+	public function line(){
+		return $this->line;
+	}
+	public function value(){
+		return $this->value;
+	}
+	public function __toString(){
+		return '['.$this->time.']'.'['.self::$id.']'.'['.$this->fm_level().']'.':['.$this->file.':'.$this->line.']'.' '.$this->fm_value();
 	}
 	/**
 	 * 格納されたログを出力する
