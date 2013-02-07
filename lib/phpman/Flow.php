@@ -3,23 +3,51 @@ namespace phpman;
 
 class Flow{
 	use \phpman\InstanceModule;
+	private $template_path;
+	private $media_url;
 	
+	public function __construct(){
+		$this->template_path = getcwd().'/resrouces/templates';
+	}
+	public function template_path($path=null){
+		if(isset($path)){
+			$this->template_path = str_replace("\\",'/',$path);
+			if(substr($this->template_path,-1) != '/') $this->template_path .= '/';
+		}
+		return $this->template_path;
+	}
+	/**
+	 * メディアのURLを設定する
+	 * @param string $path
+	 * @return string
+	 */
+	public function media_url($path=null){
+		if(isset($path)){
+			$this->media_url = $path;
+			if(substr($this->media_url,-1) != '/') $this->media_url .= '/';
+		}
+		return $this->media_url;
+	}
 	public function execute($map){
 		$result_vars = array();
 		$pathinfo = preg_replace("/(.*?)\?.*/","\\1",(isset($_SERVER['PATH_INFO']) ? $_SERVER['PATH_INFO'] : null));
 		$map = $this->read($map);
 		
-		foreach($map['patterns'] as $k => $v){
+		foreach($map['patterns'] as $k => $pattern){
 			if(preg_match("/^".(empty($k) ? '' : "\/").str_replace(array("\/",'/','@#S'),array('@#S',"\/","\/"),$k).'[\/]{0,1}$/',$pathinfo,$param_arr)){
-				if(!empty($map['patterns'][$k]['action'])){
-					list($class,$method) = explode('::',$map['patterns'][$k]['action']);
+				if(!empty($pattern['action'])){
+					list($class,$method) = explode('::',$pattern['action']);
 					$r = new \ReflectionClass('\\'.str_replace('.','\\',$class));
 					$ins = $r->newInstance();
 					$result_vars = call_user_func_array(array($ins,$method),$param_arr);
 				}
-				if(isset($map[$k]['template'])){
-					// TODO
-					print($map[$k]['template']);
+				if(isset($pattern['redirect'])){
+					header('Location: '.$pattern['redirect']);
+					exit;
+				}else if(isset($pattern['template'])){
+					$template = new \phpman\Template();
+					$src = $template->read(\phpman\Util::path_absolute($this->template_path,$pattern['template']));
+					print($src);
 					return;
 				}else{
 					print(json_encode($result_vars));
@@ -75,7 +103,7 @@ class Flow{
 		$map_pattern_keys = array(
 				0=>array('name','action','redirect'
 						,'media_path','theme_path'
-						,'template_path','template_super'
+						,'template','template_path','template_super'
 						,'error_redirect','error_status','error_template'
 						,'suffix','secure','mode'
 				)
@@ -89,7 +117,7 @@ class Flow{
 				)
 				,1=>array('modules')
 		);
-				
+
 		$target_pattern = array();
 		$pathinfo = preg_replace("/(.*?)\?.*/","\\1",(isset($_SERVER['PATH_INFO']) ? $_SERVER['PATH_INFO'] : null));
 		if(is_string($map) && preg_match('/^[\w\.]+$/',$map)) $map = array('patterns'=>array(''=>array('action'=>$map)));
@@ -109,7 +137,7 @@ class Flow{
 			}
 		}
 		foreach($map['patterns'] as $k => $v){
-			if(strpos('::',$map['patterns'][$k]['action']) === false){
+			if(isset($map['patterns'][$k]['action']) && strpos('::',$map['patterns'][$k]['action']) === false){
 				foreach($automap($k,$map['patterns'][$k]['action'],$map['patterns'][$k]['name']) as $murl => $am){
 					$map['patterns'][$murl] = array_merge($map['patterns'][$k],$am);
 				}
