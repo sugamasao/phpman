@@ -40,7 +40,7 @@ class DbConnectMysql extends \phpman\DbConnect{
 		if((int)$error[0] !== 0) throw new \phpman\InvalidArgumentException($error[2]);
 	}
 	public function last_insert_id_sql(){
-		return Daq::get('select last_insert_id() as last_insert_id;');
+		return \phpman\Daq::get('select last_insert_id() as last_insert_id;');
 	}
 	/**
 	 * create table

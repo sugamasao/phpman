@@ -116,14 +116,4 @@ class Exception extends \Exception{
 	static public function throw_over($group=null){
 		if(self::has($group)) throw self::$self;
 	}
-	/**
-	 * (non-PHPdoc)
-	 * @see Exception::__toString()
-	 */
-	public function __toString(){
-		if(self::$self === null || empty(self::$self->messages)) return null;
-		$exceptions = self::gets();
-		return count($exceptions).' exceptions [#'.self::$self->id.']: '
-				.PHP_EOL.implode(PHP_EOL.PHP_EOL,array_map(function($e){ return (string)$e; },$exceptions));
-	}
 }

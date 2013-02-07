@@ -2,11 +2,13 @@
 namespace phpman;
 
 class Flow{
+	use \phpman\InstanceModule;
+	
 	public function execute($map){
 		$result_vars = array();
 		$pathinfo = preg_replace("/(.*?)\?.*/","\\1",(isset($_SERVER['PATH_INFO']) ? $_SERVER['PATH_INFO'] : null));
 		$map = $this->read($map);
-
+		
 		foreach($map['patterns'] as $k => $v){
 			if(preg_match("/^".(empty($k) ? '' : "\/").str_replace(array("\/",'/','@#S'),array('@#S',"\/","\/"),$k).'[\/]{0,1}$/',$pathinfo,$param_arr)){
 				if(!empty($map['patterns'][$k]['action'])){
@@ -16,12 +18,17 @@ class Flow{
 					$result_vars = call_user_func_array(array($ins,$method),$param_arr);
 				}
 				if(isset($map[$k]['template'])){
-					
+					// TODO
+					print($map[$k]['template']);
+					return;
 				}else{
 					print(json_encode($result_vars));
+					return;
 				}
 			}
 		}
+		print('ERRROR');
+		return;
 	}
 	public function read($map){
 		$automap = function($url,$class,$name){
@@ -47,7 +54,7 @@ class Flow{
 					}
 				}
 			}catch(\ReflectionException $e){
-				throw new exception\InvalidArgumentException($class.' not found');
+				throw new \InvalidArgumentException($class.' not found');
 			}
 			return $result;
 		};
@@ -86,7 +93,7 @@ class Flow{
 		$target_pattern = array();
 		$pathinfo = preg_replace("/(.*?)\?.*/","\\1",(isset($_SERVER['PATH_INFO']) ? $_SERVER['PATH_INFO'] : null));
 		if(is_string($map) && preg_match('/^[\w\.]+$/',$map)) $map = array('patterns'=>array(''=>array('action'=>$map)));
-		if(!isset($map['patterns']) || !is_array($map['patterns'])) throw new exception\InvalidArgumentException('pattern not found');
+		if(!isset($map['patterns']) || !is_array($map['patterns'])) throw new \InvalidArgumentException('pattern not found');
 		
 		foreach($map['patterns'] as $k => $v){		
 			if(is_int($k) || isset($map['patterns'][$k]['patterns'])){

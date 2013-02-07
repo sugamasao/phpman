@@ -14,8 +14,8 @@ class DbConnect{
 		return get_called_class();
 	}
 	public function connect($dbname,$host,$port,$user,$password,$sock){
-		if(!extension_loaded('pdo_sqlite')) throw new \phpman\RuntimeException('pdo_sqlite not supported');
-		if(empty($host) && empty($dbname)) throw new \phpman\InvalidArgumentException('undef connection name');
+		if(!extension_loaded('pdo_sqlite')) throw new \RuntimeException('pdo_sqlite not supported');
+		if(empty($host) && empty($dbname)) throw new \InvalidArgumentException('undef connection name');
 		$con = null;
 
 		if(empty($host)) $host = getcwd();
@@ -38,7 +38,7 @@ class DbConnect{
 	 * @param Dao $dao
 	 * @return Daq
 	 */
-	public function create_sql(Dao $dao){
+	public function create_sql(\phpman\Dao $dao){
 		$insert = $vars = array();
 		$autoid = null;
 		foreach($dao->self_columns() as $column){
@@ -57,7 +57,7 @@ class DbConnect{
 	 * @param Q $query
 	 * @return Daq
 	 */
-	public function update_sql(Dao $dao,Q $query){
+	public function update_sql(\phpman\Dao $dao,\phpman\Q $query){
 		$where = $update = $wherevars = $updatevars = $from = array();
 		foreach($dao->primary_columns() as $column){
 			$where[] = $this->quotation($column->column()).' = ?';
@@ -82,7 +82,7 @@ class DbConnect{
 	 * @param Dao $dao
 	 * @return Daq
 	 */
-	public function delete_sql(Dao $dao){
+	public function delete_sql(\phpman\Dao $dao){
 		$where = $vars = array();
 		foreach($dao->primary_columns() as $column){
 			$where[] = $this->quotation($column->column()).' = ?';
@@ -100,7 +100,7 @@ class DbConnect{
 	 * @param Q $query
 	 * @return Daq
 	 */
-	public function find_delete_sql(Dao $dao,Q $query){
+	public function find_delete_sql(\phpman\Dao $dao,\phpman\Q $query){
 		$from = array();
 		list($where_sql,$where_vars) = $this->where_sql($dao,$from,$query,$dao->self_columns(),null,false);
 		return new \phpman\Daq(
@@ -116,7 +116,7 @@ class DbConnect{
 	 * @param string $name columnを指定する場合に対象の変数名
 	 * @return Daq
 	 */
-	public function select_sql(Dao $dao,Q $query,$paginator,$name=null){
+	public function select_sql(\phpman\Dao $dao,\phpman\Q $query,$paginator,$name=null){
 		$select = $from = array();
 		$self_columns = $dao->self_columns();
 
@@ -170,7 +170,7 @@ class DbConnect{
 	 * @param Q $query
 	 * @return Daq
 	 */
-	public function count_sql(Dao $dao,$target_column,$gorup_column,Q $query){
+	public function count_sql(\phpman\Dao $dao,$target_column,$gorup_column,\phpman\Q $query){
 		return $this->which_aggregator_sql('count',$dao,$target_column,$gorup_column,$query);
 	}
 	/**
@@ -181,7 +181,7 @@ class DbConnect{
 	 * @param Q $query
 	 * @return Daq
 	 */
-	public function sum_sql(Dao $dao,$target_column,$gorup_column,Q $query){
+	public function sum_sql(\phpman\Dao $dao,$target_column,$gorup_column,\phpman\Q $query){
 		return $this->which_aggregator_sql('sum',$dao,$target_column,$gorup_column,$query);
 	}
 	/**
@@ -192,7 +192,7 @@ class DbConnect{
 	 * @param Q $query
 	 * @return Daq
 	 */
-	public function max_sql(Dao $dao,$target_column,$gorup_column,Q $query){
+	public function max_sql(\phpman\Dao $dao,$target_column,$gorup_column,\phpman\Q $query){
 		return $this->which_aggregator_sql('max',$dao,$target_column,$gorup_column,$query);
 	}
 	/**
@@ -203,7 +203,7 @@ class DbConnect{
 	 * @param Q $query
 	 * @return Daq
 	 */
-	public function min_sql(Dao $dao,$target_column,$gorup_column,Q $query){
+	public function min_sql(\phpman\Dao $dao,$target_column,$gorup_column,\phpman\Q $query){
 		return $this->which_aggregator_sql('min',$dao,$target_column,$gorup_column,$query);
 	}
 	/**
@@ -214,7 +214,7 @@ class DbConnect{
 	 * @param Q $query
 	 * @return Daq
 	 */
-	public function avg_sql(Dao $dao,$target_column,$gorup_column,Q $query){
+	public function avg_sql(\phpman\Dao $dao,$target_column,$gorup_column,\phpman\Q $query){
 		return $this->which_aggregator_sql('avg',$dao,$target_column,$gorup_column,$query);
 	}
 	/**
@@ -225,10 +225,10 @@ class DbConnect{
 	 * @param Q $query
 	 * @return Daq
 	 */
-	public function distinct_sql(Dao $dao,$target_column,$gorup_column,Q $query){
+	public function distinct_sql(\phpman\Dao $dao,$target_column,$gorup_column,\phpman\Q $query){
 		return $this->which_aggregator_sql('distinct',$dao,$target_column,$gorup_column,$query);
 	}
-	protected function which_aggregator_sql($exe,Dao $dao,$target_name,$gorup_name,Q $query){
+	protected function which_aggregator_sql($exe,\phpman\Dao $dao,$target_name,$gorup_name,\phpman\Q $query){
 		$select = $from = array();
 		$target_column = $group_column = null;
 		if(empty($target_name)){
@@ -269,7 +269,7 @@ class DbConnect{
 		}
 		return (empty($conds)) ? '' : implode(' and ',$conds);
 	}
-	protected function where_sql(Dao $dao,&$from,Q $q,array $self_columns,$require_where=null,$alias=true){
+	protected function where_sql(\phpman\Dao $dao,&$from,\phpman\Q $q,array $self_columns,$require_where=null,$alias=true){
 		if($q->is_block()){
 			$vars = $and_block_sql = $or_block_sql = array();
 			$where_sql = '';
@@ -384,7 +384,7 @@ class DbConnect{
 		}
 		return array(implode(' and ',$and),$vars);
 	}
-	protected function column_value(Dao $dao,$name,$value){
+	protected function column_value(\phpman\Dao $dao,$name,$value){
 		if($value === null) return null;
 		try{
 			switch($dao->prop_anon($name,'type')){
@@ -395,7 +395,7 @@ class DbConnect{
 		}
 		return $value;
 	}
-	protected function update_value(Dao $dao,$name){
+	protected function update_value(\phpman\Dao $dao,$name){
 		return $this->column_value($dao,$name,$dao->{$name}());
 	}
 	protected function get_column($column_str,array $self_columns){
@@ -403,28 +403,20 @@ class DbConnect{
 		foreach($self_columns as $c){
 			if($c->name() == $column_str) return $c;
 		}
-		throw new \phpman\LogicException('undef '.$column_str);
+		throw new \InvalidArgumentException('undef '.$column_str);
 	}
-	protected function column_alias_sql(Dao $dao,Column $column,Q $q,$alias=true){
+	protected function column_alias_sql(\phpman\Dao $dao,Column $column,\phpman\Q $q,$alias=true){
 		$column_str = ($alias) ? $column->table_alias().'.'.$this->quotation($column->column()) : $this->quotation($column->column());
 		if($q->ignore_case()) return 'upper('.$column_str.')';
 		return $column_str;
 	}
-	protected function format_column_alias_sql(Dao $dao,Column $column,Q $q,$alias=true){
+	protected function format_column_alias_sql(\phpman\Dao $dao,Column $column,\phpman\Q $q,$alias=true){
 		return $this->column_alias_sql($dao,$column,$q,$alias);
 	}
 	protected function quotation($name){
 		return $this->quotation.$name.$this->quotation;
 	}
-	
-	
-	
-	
-	/**
-	 * create table
-	 * @param Dao $dao
-	 */
-	public function create_table_sql(Dao $dao){
+	public function create_table_sql(\phpman\Dao $dao){
 		$quote = function($name){ return '`'.$name.'`'; };
 		$to_column_type = function($dao,$type,$name) use($quote){
 			switch($type){
@@ -445,7 +437,7 @@ class DbConnect{
 				case 'integer': return $quote($name).' INTEGER';
 				case 'email':
 				case 'choice': return $quote($name).' TEXT';
-				default: throw new \phpman\InvalidArgumentException('undefined type `'.$type.'`');
+				default: throw new \InvalidArgumentException('undefined type `'.$type.'`');
 			}
 		};
 		$columndef = $primary = array();
@@ -463,10 +455,10 @@ class DbConnect{
 		$sql .= ' );'.PHP_EOL;
 		return $sql;
 	}
-	public function exists_table_sql(Dao $dao){
+	public function exists_table_sql(\phpman\Dao $dao){
 		return sprintf('select count(*) from sqlite_master where type=\'table\' and name=\'%s\'',$dao->table());
 	}
-	protected function create_table_prop_cond(Dao $dao,$prop_name){
+	protected function create_table_prop_cond(\phpman\Dao $dao,$prop_name){
 		return ($dao->prop_anon($prop_name,'extra') !== true && $dao->prop_anon($prop_name,'cond') === null);
 	}
 }
