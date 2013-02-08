@@ -29,7 +29,7 @@ class Db implements \Iterator{
 			if(isset($def[$k])) $this->{$k} = $def[$k];
 		}
 		if(empty($this->type)){
-			$this->type = DbConnect::type();
+			$this->type = \phpman\DbConnect::type();
 			if(empty($this->host)) $this->host = ':memory:';
 		}
 		if(empty($this->encode)) $this->encode = 'utf8';
