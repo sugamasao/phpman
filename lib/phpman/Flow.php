@@ -3,11 +3,50 @@ namespace phpman;
 
 class Flow{
 	use \phpman\InstanceModule;
-	private $template_path;
+	private $branch_url;
+	private $app_url;
 	private $media_url;
+	private $template_path;
+	private $package_media_url = 'package/resources/media';		
 	
-	public function __construct(){
-		$this->template_path = getcwd().'/resrouces/templates';
+	static private $get_maps = false;
+	static private $output_maps = array();
+	
+	static private function entry_file(){
+		foreach(debug_backtrace(false) as $d){
+			if($d['file'] !== __FILE__) return $d['file'];
+		}
+		new \RuntimeException('no entry file');
+	}
+	public function __construct($app_url=null){
+		$f = str_replace('\\','/',self::entry_file());
+		$this->app_url = \phpman\Conf::get('app_url',$app_url);
+		
+		if(empty($this->app_url)) $this->app_url = dirname('http://localhost/'.preg_replace('/.+\/workspace\/(.+)/','\\1',$f));
+		if(substr($this->app_url,-1) != '/') $this->app_url .= '/';
+		$this->template_path = str_replace("\\",'/',\phpman\Conf::get('template_path',self::resource_path('templates')));
+		if(substr($this->template_path,-1) != '/') $this->template_path .= '/';
+		$this->media_url = str_replace("\\",'/',\phpman\Conf::get('media_url',$this->app_url.'resources/media/'));
+		if(substr($this->media_url,-1) != '/') $this->media_url .= '/';
+		$this->branch_url = $this->app_url.((($branch = substr(basename($f),0,-4)) !== 'index') ? $branch.'/' : '');
+	}
+	/**
+	 * ワーキングディレクトリを返す
+	 * @return string
+	 */
+	static public function work_path($path=null){
+		$dir = str_replace('\\','/',\phpman\Conf::get('work_dir',getcwd().'/work/'));
+		if(substr($dir,-1) != '/') $dir = $dir.'/';
+		return $dir.$path;
+	}
+	/**
+	 * リソースディレクトリを返す
+	 * @return string
+	 */
+	static public function resource_path($path=null){
+		$dir = str_replace('\\','/',\phpman\Conf::get('resource_dir',getcwd().'/resources/'));
+		if(substr($dir,-1) != '/') $dir = $dir.'/';
+		return $dir.$path;
 	}
 	public function template_path($path=null){
 		if(isset($path)){
@@ -28,11 +67,36 @@ class Flow{
 		}
 		return $this->media_url;
 	}
+	/**
+	 * mapsを取得する
+	 * @param string $file
+	 * @return array
+	 */
+	static public function get_maps($file){
+		$key = basename($file);
+		if(!isset(self::$output_maps[$key])){
+			self::$get_maps = true;
+			self::$output_maps[$key] = array();
+			try{
+				ob_start();
+					include_once($file);
+				ob_end_clean();
+			}catch(\Exception $e){
+				\phpman\Log::error($e);
+			}
+		}
+		return self::$output_maps[$key];
+	}
 	public function execute($map){
 		$result_vars = array();
 		$pathinfo = preg_replace("/(.*?)\?.*/","\\1",(isset($_SERVER['PATH_INFO']) ? $_SERVER['PATH_INFO'] : null));
 		$map = $this->read($map);
 		
+		if(self::$get_maps){
+			self::$output_maps[basename(self::entry_file())] = $map['patterns'];
+			self::$get_maps = false;
+			return;
+		}		
 		foreach($map['patterns'] as $k => $pattern){
 			if(preg_match("/^".(empty($k) ? '' : "\/").str_replace(array("\/",'/','@#S'),array('@#S',"\/","\/"),$k).'[\/]{0,1}$/',$pathinfo,$param_arr)){
 				if(!empty($pattern['action'])){
@@ -137,6 +201,7 @@ class Flow{
 			}
 		}
 		foreach($map['patterns'] as $k => $v){
+			if(!isset($map['patterns'][$k]['name'])) $map['patterns'][$k]['name'] = $k;
 			if(isset($map['patterns'][$k]['action']) && strpos('::',$map['patterns'][$k]['action']) === false){
 				foreach($automap($k,$map['patterns'][$k]['action'],$map['patterns'][$k]['name']) as $murl => $am){
 					$map['patterns'][$murl] = array_merge($map['patterns'][$k],$am);
@@ -144,6 +209,35 @@ class Flow{
 				unset($map['patterns'][$k]);
 			}
 		}
+		
+		
+		
+		
+		// TODO
+		/*
+		list($url,$surl) = array($this->branch_url,str_replace('http://','https://',$this->branch_url));
+		$conf_secure = (\phpman\Conf::get('secure',true) === true);
+		
+		foreach($apps as $u => $m){
+			$m['secure'] = ($conf_secure && (((isset($m['secure']) && $m['secure'] === true)) || (!isset($m['secure']) && $map_secure)));
+			$cnt = 0;
+			$fu = \phpman\net\Path::absolute(
+					($m['secure'] ? $surl : $url)
+					,(empty($u)) ? '' : substr(preg_replace_callback("/([^\\\\])(\(.*?[^\\\\]\))/",function($n){
+				return $n[1].'%s';
+			},' '.$u,-1,$cnt),1)
+			);
+			$apps[$u] = array_merge($m,array(
+					'url'=>$u
+					,'format'=>$fu
+					,'num'=>$cnt
+					,'pattern'=>str_replace(array("\\\\","\\.",'_ESC_'),array('_ESC_','.',"\\"),$fu)
+			));
+		}
+		*/
+		
+		
+
 		return $map;
 	}
 }
