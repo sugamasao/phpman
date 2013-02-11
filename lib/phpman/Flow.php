@@ -213,13 +213,12 @@ class Flow{
 		
 		
 		
-		// TODO
+		// TODO URL生成用のパターン生成
 		/*
-		list($url,$surl) = array($this->branch_url,str_replace('http://','https://',$this->branch_url));
-		$conf_secure = (\phpman\Conf::get('secure',true) === true);
+			list($url,$surl) = array($this->branch_url,str_replace('http://','https://',$this->branch_url));
+			$conf_secure = (\phpman\Conf::get('secure',true) === true);
 		
-		foreach($apps as $u => $m){
-			$m['secure'] = ($conf_secure && (((isset($m['secure']) && $m['secure'] === true)) || (!isset($m['secure']) && $map_secure)));
+			$secure = ($conf_secure && (((isset($m['secure']) && $m['secure'] === true)) || (!isset($m['secure']) && $map_secure)));
 			$cnt = 0;
 			$fu = \phpman\net\Path::absolute(
 					($m['secure'] ? $surl : $url)
@@ -227,13 +226,7 @@ class Flow{
 				return $n[1].'%s';
 			},' '.$u,-1,$cnt),1)
 			);
-			$apps[$u] = array_merge($m,array(
-					'url'=>$u
-					,'format'=>$fu
-					,'num'=>$cnt
-					,'pattern'=>str_replace(array("\\\\","\\.",'_ESC_'),array('_ESC_','.',"\\"),$fu)
-			));
-		}
+			'pattern'　=　str_replace(array("\\\\","\\.",'_ESC_'),array('_ESC_','.',"\\"),$fu)
 		*/
 		
 		
