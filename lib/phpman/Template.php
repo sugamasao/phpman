@@ -195,24 +195,26 @@ class Template{
 		return $src;
 		
 		/***
-			$src = pre('
-				<script language="javascript">
-					var i = "{$abc}";
-					var img = "<img src=\'hoge.jpg\' />";
-				</script>
-				<img src=\'hoge.jpg\' />
+		 $src = pre('
+		 		<script src="abc.js"></script>
+		 		<script language="javascript">
+		 		var i = "{$abc}";
+		 		var img = "<img src=\'hoge.jpg\' />";
+		 		</script>
+		 		<img src=\'hoge.jpg\' />
 		 		');
-			$result = pre('
+		$result = pre('
+				<script src="http://localhost/hoge/media/abc.js"></script>
 				<script language="javascript">
-					var i = "123";
-					var img = "<img src=\'hoge.jpg\' />";
+				var i = "123";
+				var img = "<img src=\'hoge.jpg\' />";
 				</script>
 				<img src=\'http://localhost/hoge/media/hoge.jpg\' />
-			');
-			$t = new self('http://localhost/hoge/media');
-			$t->vars("abc",123);
-			eq($result,$t->get($src));
-		*/		
+				');
+		$t = new self('http://localhost/hoge/media');
+		$t->vars("abc",123);
+		eq($result,$t->get($src));
+		*/
 	}
 	private function exec($_src_){
 		/**
@@ -1011,8 +1013,10 @@ class Template{
 		$i = 0;
 		\phpman\Xml::set($tag,'<:>'.$src.'</:>');
 		foreach($tag->in('script') as $obj){
-			$keys[] = '__'.$uniq.($i++).'__';
-			$tags[] = $obj->plain();
+			if(!$obj->is_attr('src')){
+				$keys[] = '__'.$uniq.($i++).'__';
+				$tags[] = $obj->plain();
+			}
 		}
 		return ($i > 0);
 	}
