@@ -5,3 +5,6 @@ $maps = $flow->get_maps('/Users/tokushima/Documents/workspace/phpman/test_index.
 if(eq(true,isset($maps['template_abc']))){
 	eq('template_abc',$maps['template_abc']['name']);
 }
+if(eq(true,isset($maps['ABC/jkl/(.+)/(.+)']))){
+	eq('ABC/jkl',$maps['ABC/jkl/(.+)/(.+)']['name']);
+}

@@ -98,7 +98,7 @@ class Flow{
 			return;
 		}		
 		foreach($map['patterns'] as $k => $pattern){
-			if(preg_match("/^".(empty($k) ? '' : "\/").str_replace(array("\/",'/','@#S'),array('@#S',"\/","\/"),$k).'[\/]{0,1}$/',$pathinfo,$param_arr)){
+			if(preg_match('/^'.(empty($k) ? '' : '\/').str_replace(array('\/','/','@#S'),array('@#S','\/','\/'),$k).'[\/]{0,1}$/',$pathinfo,$param_arr)){
 				if(!empty($pattern['action'])){
 					list($class,$method) = explode('::',$pattern['action']);
 					$r = new \ReflectionClass('\\'.str_replace('.','\\',$class));
@@ -122,7 +122,7 @@ class Flow{
 		print('ERRROR');
 		return;
 	}
-	public function read($map){
+	private function read($map){
 		$automap = function($url,$class,$name){
 			$result = array();
 			
@@ -132,13 +132,11 @@ class Flow{
 					if($m->isPublic() && !$m->isStatic() && substr($m->getName(),0,1) != '_'){
 						if((boolean)preg_match('/@automap[\s]*/',$m->getDocComment())){
 							$murl = $url.(($m->getName() == 'index') ? '' : (($url == '') ? '' : '/').$m->getName()).str_repeat('/(.+)',$m->getNumberOfRequiredParameters());
-							
 							for($i=0;$i<=$m->getNumberOfParameters()-$m->getNumberOfRequiredParameters();$i++){
 								$result[$murl] = array(
 													'name'=>$name.'/'.$m->getName()
 													,'action'=>$class.'::'.$m->getName()
-													,'num'=>$i
-													,'='=>dirname($r->getFilename())
+													,'@'=>$r->getFilename()
 													);
 								$murl .= '/(.+)';
 							}
@@ -181,8 +179,6 @@ class Flow{
 				)
 				,1=>array('modules')
 		);
-
-		$target_pattern = array();
 		$pathinfo = preg_replace("/(.*?)\?.*/","\\1",(isset($_SERVER['PATH_INFO']) ? $_SERVER['PATH_INFO'] : null));
 		if(is_string($map) && preg_match('/^[\w\.]+$/',$map)) $map = array('patterns'=>array(''=>array('action'=>$map)));
 		if(!isset($map['patterns']) || !is_array($map['patterns'])) throw new \InvalidArgumentException('pattern not found');
@@ -200,37 +196,40 @@ class Flow{
 				$map['patterns'][$k] = $fixed_vars($map_pattern_keys,$map['patterns'][$k],array());
 			}
 		}
+		list($http,$https) = array($this->branch_url,str_replace('http://','https://',$this->branch_url));
+		$conf_secure = (\phpman\Conf::get('secure',true) === true);
+		$url_format_func = function($url,$map_secure,$conf_secure,$http,$https){
+			$secure = ($conf_secure && $map_secure);
+			$num = 0;
+			$format = \phpman\Util::path_absolute(
+						($map_secure ? $https : $http)
+						,(empty($url)) ? '' : 
+										substr(
+											preg_replace_callback("/([^\\\\])(\(.*?[^\\\\]\))/"
+												,function($n){return $n[1].'%s';}
+												,' '.$url
+												,-1
+												,$num
+											)
+											,1
+										)
+					);
+			return array('format'=>str_replace(array('\\\\','\\.','_ESC_'),array('_ESC_','.','\\'),$format)
+						,'num'=>$num
+					);
+		};				
 		foreach($map['patterns'] as $k => $v){
-			if(!isset($map['patterns'][$k]['name'])) $map['patterns'][$k]['name'] = $k;
-			if(isset($map['patterns'][$k]['action']) && strpos('::',$map['patterns'][$k]['action']) === false){
+			if(!isset($v['name'])) $map['patterns'][$k]['name'] = $k;
+			if(isset($v['action']) && strpos($v['action'],'::') === false){
 				foreach($automap($k,$map['patterns'][$k]['action'],$map['patterns'][$k]['name']) as $murl => $am){
 					$map['patterns'][$murl] = array_merge($map['patterns'][$k],$am);
+					$map['patterns'][$murl] = array_merge($map['patterns'][$murl],$url_format_func($murl,$v['secure'],$conf_secure,$http,$https));
 				}
 				unset($map['patterns'][$k]);
+			}else{
+				$map['patterns'][$k] = array_merge($map['patterns'][$k],$url_format_func($k,$v['secure'],$conf_secure,$http,$https));
 			}
 		}
-		
-		
-		
-		
-		// TODO URL生成用のパターン生成
-		/*
-			list($url,$surl) = array($this->branch_url,str_replace('http://','https://',$this->branch_url));
-			$conf_secure = (\phpman\Conf::get('secure',true) === true);
-		
-			$secure = ($conf_secure && (((isset($m['secure']) && $m['secure'] === true)) || (!isset($m['secure']) && $map_secure)));
-			$cnt = 0;
-			$fu = \phpman\net\Path::absolute(
-					($m['secure'] ? $surl : $url)
-					,(empty($u)) ? '' : substr(preg_replace_callback("/([^\\\\])(\(.*?[^\\\\]\))/",function($n){
-				return $n[1].'%s';
-			},' '.$u,-1,$cnt),1)
-			);
-			'pattern'　=　str_replace(array("\\\\","\\.",'_ESC_'),array('_ESC_','.',"\\"),$fu)
-		*/
-		
-		
-
 		return $map;
 	}
 }
