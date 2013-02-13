@@ -8,3 +8,7 @@ if(eq(true,isset($maps['template_abc']))){
 if(eq(true,isset($maps['ABC/jkl/(.+)/(.+)']))){
 	eq('ABC/jkl',$maps['ABC/jkl/(.+)/(.+)']['name']);
 }
+if(eq(true,isset($maps['template_abc/def']))){
+	eq('template_def',$maps['template_abc/def']['name']);
+}
+

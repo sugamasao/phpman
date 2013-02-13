@@ -27,8 +27,7 @@ class Testman{
 						if(strpos($src,'Flow') !== false){
 							$entry_name = substr($e->getFilename(),0,-4);
 							foreach(\phpman\Flow::get_maps($e->getPathname()) as $k => $m){
-								// TODO full url
-								$this->flow_output_maps[$entry_name.'::'.$m['name']] = $k;
+								$this->flow_output_maps[$entry_name.'::'.$m['name']] = $m['format'];
 							}
 						}
 					}
