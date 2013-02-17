@@ -12,12 +12,6 @@ class Flow{
 	static private $get_maps = false;
 	static private $output_maps = array();
 	
-	static private function entry_file(){
-		foreach(debug_backtrace(false) as $d){
-			if($d['file'] !== __FILE__) return $d['file'];
-		}
-		new \RuntimeException('no entry file');
-	}
 	public function __construct($app_url=null){
 		$f = str_replace('\\','/',self::entry_file());
 		$this->app_url = \phpman\Conf::get('app_url',$app_url);
@@ -30,9 +24,15 @@ class Flow{
 		if(substr($this->media_url,-1) != '/') $this->media_url .= '/';
 		$this->branch_url = $this->app_url.((($branch = substr(basename($f),0,-4)) !== 'index') ? $branch.'/' : '');
 	}
+	static private function entry_file(){
+		foreach(debug_backtrace(false) as $d){
+			if($d['file'] !== __FILE__) return $d['file'];
+		}
+		new \RuntimeException('no entry file');
+	}
 	/**
 	 * ワーキングディレクトリを返す
-	 * @return string
+	 * @return string $path
 	 */
 	static public function work_path($path=null){
 		$dir = str_replace('\\','/',\phpman\Conf::get('work_dir',getcwd().'/work/'));
@@ -41,13 +41,17 @@ class Flow{
 	}
 	/**
 	 * リソースディレクトリを返す
-	 * @return string
+	 * @return string $path
 	 */
 	static public function resource_path($path=null){
 		$dir = str_replace('\\','/',\phpman\Conf::get('resource_dir',getcwd().'/resources/'));
 		if(substr($dir,-1) != '/') $dir = $dir.'/';
 		return $dir.$path;
 	}
+	/**
+	 * テンプレートディレクトリを指定する
+	 * @param string $path
+	 */
 	public function template_path($path=null){
 		if(isset($path)){
 			$this->template_path = str_replace("\\",'/',$path);
@@ -87,6 +91,10 @@ class Flow{
 		}
 		return self::$output_maps[$key];
 	}
+	/**
+	 * 実行する
+	 * @param array $map
+	 */
 	public function execute($map){
 		$result_vars = array();
 		$pathinfo = preg_replace("/(.*?)\?.*/","\\1",(isset($_SERVER['PATH_INFO']) ? $_SERVER['PATH_INFO'] : null));
@@ -106,26 +114,33 @@ class Flow{
 					$result_vars = call_user_func_array(array($ins,$method),$param_arr);
 				}
 				if(isset($pattern['redirect'])){
-					header('Location: '.$pattern['redirect']);
+					\phpman\HttpHeader::redirect($pattern['redirect']);
 					exit;
 				}else if(isset($pattern['template'])){
 					$template = new \phpman\Template();
 					$src = $template->read(\phpman\Util::path_absolute($this->template_path,$pattern['template']));
 					print($src);
 					return;
+				}else if(isset($pattern['@'])){
+var_dump($pattern['@']);
+					/*
+					if(is_file($t = $pattern['@'].'/resources/templates/'.$apps[$k]['method'].'.html')){
+						$this->print_template(dirname($t).'/',basename($t),$this->branch_url.$this->package_media_url.'/'.$idx,$theme,$put_block,$obj,$apps,$k,false);
+						return;
+					}
+					*/
 				}else{
 					print(json_encode($result_vars));
 					return;
 				}
 			}
 		}
-		print('ERRROR');
+		\phpman\HttpHeader::send_status(404);
 		return;
 	}
 	private function read($map){
 		$automap = function($url,$class,$name){
 			$result = array();
-			
 			try{
 				$r = new \ReflectionClass(str_replace('.','\\',$class));
 				foreach($r->getMethods() as $m){
@@ -136,7 +151,7 @@ class Flow{
 								$result[$murl] = array(
 													'name'=>$name.'/'.$m->getName()
 													,'action'=>$class.'::'.$m->getName()
-													,'@'=>$r->getFilename()
+													,'@'=>(basename($r->getFilename(),'php') === basename(dirname($r->getFilename())) ? dirname($r->getFilename()) : substr($r->getFilename(),0,-4))
 													);
 								$murl .= '/(.+)';
 							}
@@ -217,19 +232,20 @@ class Flow{
 			return array('format'=>str_replace(array('\\\\','\\.','_ESC_'),array('_ESC_','.','\\'),$format)
 						,'num'=>$num
 					);
-		};				
+		};
+		$expand_map = $map;
+		unset($expand_map['patterns']);
 		foreach($map['patterns'] as $k => $v){
-			if(!isset($v['name'])) $map['patterns'][$k]['name'] = $k;
-			if(isset($v['action']) && strpos($v['action'],'::') === false){
-				foreach($automap($k,$map['patterns'][$k]['action'],$map['patterns'][$k]['name']) as $murl => $am){
-					$map['patterns'][$murl] = array_merge($map['patterns'][$k],$am);
-					$map['patterns'][$murl] = array_merge($map['patterns'][$murl],$url_format_func($murl,$v['secure'],$conf_secure,$http,$https));
+			if(!isset($v['name'])) $v['name'] = $k;
+			if(isset($v['action']) && strpos($v['action'],'::') === false){				
+				foreach($automap($k,$v['action'],$v['name']) as $murl => $am){
+					$v = array_merge($v,$am);
+					$expand_map['patterns'][$murl] = array_merge($v,$url_format_func($murl,$v['secure'],$conf_secure,$http,$https));
 				}
-				unset($map['patterns'][$k]);
 			}else{
-				$map['patterns'][$k] = array_merge($map['patterns'][$k],$url_format_func($k,$v['secure'],$conf_secure,$http,$https));
+				$expand_map['patterns'][$k] = array_merge($v,$url_format_func($k,$v['secure'],$conf_secure,$http,$https));
 			}
 		}
-		return $map;
+		return $expand_map;
 	}
 }

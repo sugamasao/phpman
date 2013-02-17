@@ -11,5 +11,6 @@ $flow->execute([
 		,'template_abc/def/(.+)'=>['name'=>'template_def_arg1','template'=>'abc.html']
 		,'template_abc/def/(.+)/(.+)'=>['name'=>'template_def_arg2','template'=>'abc.html']
 		,'redirect_abc'=>['redirect'=>'http://rhaco.org']
+		,'package/action'=>['action'=>'local.test.flow.PackageAction']
 	]
 ]);
