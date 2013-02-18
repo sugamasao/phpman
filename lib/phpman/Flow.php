@@ -18,9 +18,9 @@ class Flow{
 		
 		if(empty($this->app_url)) $this->app_url = dirname('http://localhost/'.preg_replace('/.+\/workspace\/(.+)/','\\1',$f));
 		if(substr($this->app_url,-1) != '/') $this->app_url .= '/';
-		$this->template_path = str_replace("\\",'/',\phpman\Conf::get('template_path',self::resource_path('templates')));
+		$this->template_path = str_replace('\\','/',\phpman\Conf::get('template_path',self::resource_path('templates')));
 		if(substr($this->template_path,-1) != '/') $this->template_path .= '/';
-		$this->media_url = str_replace("\\",'/',\phpman\Conf::get('media_url',$this->app_url.'resources/media/'));
+		$this->media_url = str_replace('\\','/',\phpman\Conf::get('media_url',$this->app_url.'resources/media/'));
 		if(substr($this->media_url,-1) != '/') $this->media_url .= '/';
 		$this->branch_url = $this->app_url.((($branch = substr(basename($f),0,-4)) !== 'index') ? $branch.'/' : '');
 	}
@@ -54,7 +54,7 @@ class Flow{
 	 */
 	public function template_path($path=null){
 		if(isset($path)){
-			$this->template_path = str_replace("\\",'/',$path);
+			$this->template_path = str_replace('\\','/',$path);
 			if(substr($this->template_path,-1) != '/') $this->template_path .= '/';
 		}
 		return $this->template_path;
@@ -104,7 +104,16 @@ class Flow{
 			self::$output_maps[basename(self::entry_file())] = $map['patterns'];
 			self::$get_maps = false;
 			return;
-		}		
+		}
+		if(preg_match('/^\/'.preg_quote($this->package_media_url,'/').'\/(\d+)\/(.+)$/',$pathinfo,$m)){
+			foreach($map['patterns'] as $pattern){
+				if((int)$pattern['pattern_id'] === (int)$m[1] && isset($pattern['@'])){
+					\phpman\HttpFile::attach($pattern['@'].'/resources/media/'.$m[2]);
+				}
+			}
+			\phpman\HttpHeader::send_status(404);
+			exit;
+		}
 		foreach($map['patterns'] as $k => $pattern){
 			if(preg_match('/^'.(empty($k) ? '' : '\/').str_replace(array('\/','/','@#S'),array('@#S','\/','\/'),$k).'[\/]{0,1}$/',$pathinfo,$param_arr)){
 				if(!empty($pattern['action'])){
@@ -117,18 +126,18 @@ class Flow{
 					\phpman\HttpHeader::redirect($pattern['redirect']);
 					exit;
 				}else if(isset($pattern['template'])){
-					$template = new \phpman\Template();
+					$template = new \phpman\Template($this->media_url);
 					$src = $template->read(\phpman\Util::path_absolute($this->template_path,$pattern['template']));
 					print($src);
 					return;
-				}else if(isset($pattern['@'])){
-var_dump($pattern['@']);
-					/*
-					if(is_file($t = $pattern['@'].'/resources/templates/'.$apps[$k]['method'].'.html')){
-						$this->print_template(dirname($t).'/',basename($t),$this->branch_url.$this->package_media_url.'/'.$idx,$theme,$put_block,$obj,$apps,$k,false);
-						return;
-					}
-					*/
+				}else if(
+					isset($pattern['@'])
+					&& is_file($t=$pattern['@'].'/resources/templates/'.preg_replace('/^.+::/','',$pattern['action']).'.html')
+				){
+					$template = new \phpman\Template($this->branch_url.$this->package_media_url.'/'.$pattern['pattern_id']);
+					$src = $template->read($t);
+					print($src);
+					return;
 				}else{
 					print(json_encode($result_vars));
 					return;
@@ -235,7 +244,9 @@ var_dump($pattern['@']);
 		};
 		$expand_map = $map;
 		unset($expand_map['patterns']);
+		$pattern_id = 1;
 		foreach($map['patterns'] as $k => $v){
+			$v['pattern_id'] = $pattern_id++;
 			if(!isset($v['name'])) $v['name'] = $k;
 			if(isset($v['action']) && strpos($v['action'],'::') === false){				
 				foreach($automap($k,$v['action'],$v['name']) as $murl => $am){
