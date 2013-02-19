@@ -116,34 +116,50 @@ class Flow{
 		}
 		foreach($map['patterns'] as $k => $pattern){
 			if(preg_match('/^'.(empty($k) ? '' : '\/').str_replace(array('\/','/','@#S'),array('@#S','\/','\/'),$k).'[\/]{0,1}$/',$pathinfo,$param_arr)){
-				if(!empty($pattern['action'])){
-					list($class,$method) = explode('::',$pattern['action']);
-					$r = new \ReflectionClass('\\'.str_replace('.','\\',$class));
-					$ins = $r->newInstance();
-					$result_vars = call_user_func_array(array($ins,$method),$param_arr);
+				if($pattern['secure'] === true && \phpman\Conf::get('secure',true) !== false){
+					if(substr(\phpman\Request::current_url(),0,5) === 'http:' &&
+						(!isset($_SERVER['HTTP_X_FORWARDED_HOST']) 
+							|| (isset($_SERVER['HTTP_X_FORWARDED_PORT']) || isset($_SERVER['HTTP_X_FORWARDED_PROTO']))
+						)
+					){
+						header('Location: '.preg_replace('/^.+(:\/\/.+)$/','https\\1',\phpman\Request::current_url()));
+						exit;
+					}
 				}
-				if(isset($pattern['redirect'])){
-					\phpman\HttpHeader::redirect($pattern['redirect']);
-					exit;
-				}else if(isset($pattern['template'])){
-					$template = new \phpman\Template($this->media_url);
-					$src = $template->read(\phpman\Util::path_absolute($this->template_path,$pattern['template']));
-					print($src);
-					return;
-				}else if(
-					isset($pattern['@'])
-					&& is_file($t=$pattern['@'].'/resources/templates/'.preg_replace('/^.+::/','',$pattern['action']).'.html')
-				){
-					$template = new \phpman\Template($this->branch_url.$this->package_media_url.'/'.$pattern['pattern_id']);
-					$src = $template->read($t);
-					print($src);
-					return;
-				}else{
-					print(json_encode($result_vars));
-					return;
+				try{
+					if(!empty($pattern['action'])){
+						list($class,$method) = explode('::',$pattern['action']);
+						$r = new \ReflectionClass('\\'.str_replace('.','\\',$class));
+						$ins = $r->newInstance(); 
+						// TODO
+						$result_vars = call_user_func_array(array($ins,$method),$param_arr);
+					}
+					if(isset($pattern['redirect'])){
+						\phpman\HttpHeader::redirect($pattern['redirect']);
+						exit;
+					}else if(isset($pattern['template'])){
+						$template = new \phpman\Template($this->media_url);
+						$src = $template->read(\phpman\Util::path_absolute($this->template_path,$pattern['template']));
+						print($src);
+						return;
+					}else if(
+						isset($pattern['@'])
+						&& is_file($t=$pattern['@'].'/resources/templates/'.preg_replace('/^.+::/','',$pattern['action']).'.html')
+					){
+						$template = new \phpman\Template($this->branch_url.$this->package_media_url.'/'.$pattern['pattern_id']);
+						$src = $template->read($t);
+						print($src);
+						return;
+					}else{
+						print(json_encode($result_vars));
+						return;
+					}
+				}catch(\Exception $e){
+					// TODO
 				}
 			}
 		}
+		// TODO
 		\phpman\HttpHeader::send_status(404);
 		return;
 	}
