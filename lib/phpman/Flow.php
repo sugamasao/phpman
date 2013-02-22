@@ -148,9 +148,14 @@ class Flow{
 					}
 					if(!empty($pattern['action'])){
 						list($class,$method) = explode('::',$pattern['action']);
-						$r = new \ReflectionClass('\\'.str_replace('.','\\',$class));
-						$ins = $r->newInstance(); 
-						// TODO
+						$ins = $this->str_reflection($class);
+						if($ins instanceof \phpman\InstanceModule){
+							foreach(array($map['modules'],$pattern['modules']) as $modules){
+								foreach($modules as $m){
+									$ins->set_object_module($this->str_reflection($m));
+								}
+							}
+						}
 						$result_vars = call_user_func_array(array($ins,$method),$param_arr);
 					}
 					if(isset($pattern['template'])){
@@ -161,7 +166,7 @@ class Flow{
 					){
 						$this->template($t,$this->branch_url.$this->package_media_url.'/'.$pattern['pattern_id']);
 					}else{
-						print(json_encode($result_vars));
+						print(json_encode(array('result'=>$result_vars)));
 						return;
 					}
 				}catch(\Exception $e){
@@ -181,9 +186,7 @@ class Flow{
 					if(isset($map['error_template'])){
 						$this->template(\phpman\Util::path_absolute($this->template_path,$map['error_template']));
 					}
-					// TODO
-					$error_json = $e->getMessage();
-					print(json_encode($error_json));
+					print(json_encode(array('error'=>array('message'=>$e->getMessage()))));
 					return;
 				}
 			}
@@ -235,7 +238,7 @@ class Flow{
 		};
 		$map_pattern_keys = array(
 				0=>array('name','action','redirect'
-						,'media_path','theme_path'
+						,'media_path'
 						,'template','template_path','template_super'
 						,'error_redirect','error_status','error_template'
 						,'suffix','secure','mode'
@@ -243,7 +246,7 @@ class Flow{
 				,1=>array('modules','args','vars')
 		);
 		$root_keys = array(
-				0=>array('media_path','theme_path'
+				0=>array('media_path'
 						,'nomatch_redirect'
 						,'error_redirect','error_status','error_template'
 						,'secure'
@@ -305,5 +308,22 @@ class Flow{
 			}
 		}
 		return $expand_map;
+	}
+	private function str_reflection($package){
+		if(is_object($package)) return $package;
+		$class_name = substr($package,strrpos($package,'.')+1);
+		try{
+			$r = new \ReflectionClass('\\'.str_replace('.','\\',$package));
+			return $r->newInstance();
+		}catch(\ReflectionException $e){
+			if(!empty($class_name)){
+				try{
+					$r = new \ReflectionClass($class_name);
+					return $r->newInstance();
+				}catch(\ReflectionException $f){
+				}
+			}
+			throw $e;
+		}
 	}
 }
