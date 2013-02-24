@@ -157,6 +157,7 @@ class Flow{
 							}
 						}
 						$result_vars = call_user_func_array(array($ins,$method),$param_arr);
+						if($result_vars === null) $result_vars = array();
 					}
 					if(isset($pattern['template'])){
 						$this->template(\phpman\Util::path_absolute($this->template_path,$pattern['template']));

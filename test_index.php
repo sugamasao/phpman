@@ -13,6 +13,7 @@ $flow->execute([
 		,'redirect_url'=>['redirect'=>'http://rhaco.org']
 		,'redirect_map'=>['redirect'=>'template_defa']
 		,'package/action'=>['action'=>'local.test.flow.PackageAction']
+		,'request'=>['action'=>'local.test.flow.RequestAction::index']
 	]
 	//	,'error_redirect'=>'template_abc'
 	,'nomatch_redirect'=>'template_abc'
