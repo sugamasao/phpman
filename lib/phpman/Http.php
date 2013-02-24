@@ -13,6 +13,7 @@ class Http{
 	private $head;
 	private $body;
 	private $url;
+	private $cookie = array();
 	
 	public function __construct($agent=null,$timeout=30,$status_redirect=true){
 		$this->agent = $agent;
@@ -92,6 +93,18 @@ class Http{
 		if(!isset($this->request_header['Expect'])){
 			$this->request_header['Expect'] = null;
 		}
+		$cookie_base_domain = preg_replace('/^[\w]+:\/\/(.+)$/','\\1',$this->url);		
+		if(!isset($this->request_header['Cookie'])){
+			$cookies = '';
+			foreach($this->cookie as $domain => $cookie_value){
+				if(strpos($cookie_base_domain,$domain) === 0 || strpos($cookie_base_domain,(($domain[0] == '.') ? $domain : '.'.$domain)) !== false){
+					foreach($cookie_value as $k => $v){
+						if(!$v['secure'] || ($v['secure'] && substr($url,0,8) == 'https://')) $cookies .= sprintf('%s=%s; ',$k,$v['value']);
+					}
+				}
+			}
+			$this->request_header['Cookie'] = $cookies;
+		}
 		if($this->status_redirect){
 			curl_setopt($this->resource,CURLOPT_FOLLOWLOCATION,true);
 			curl_setopt($this->resource,CURLOPT_AUTOREFERER,true);
@@ -148,9 +161,43 @@ class Http{
 		//curl_setopt($this->resource,CURLOPT_SSL_VERIFYPEER,false); // サーバー証明書の検証をしない
 		
 		$rtn = curl_exec($this->resource);
-		if($rtn === false) throw new \RuntimeException();
+		if($rtn === false) throw new \RuntimeException('Error');
 		list($this->head,$this->body) = explode("\r\n\r\n",$rtn);
 
+		if(preg_match_all('/Set-Cookie:[\s]*(.+)/i',$this->head,$match)){
+			$unsetcookie = $setcookie = array();
+			foreach($match[1] as $cookies){
+				$cookie_name = $cookie_value = $cookie_domain = $cookie_path = $cookie_expires = null;
+				$cookie_domain = $cookie_base_domain;
+				$cookie_path = '/';
+				$secure = false;
+		
+				foreach(explode(';',$cookies) as $cookie){
+					$cookie = trim($cookie);
+					if(strpos($cookie,'=') !== false){
+						list($k,$v) = explode('=',$cookie,2);
+						$k = trim($k);
+						$v = trim($v);
+						switch(strtolower($k)){
+							case 'expires': $cookie_expires = ctype_digit($v) ? (int)$v : strtotime($v); break;
+							case 'domain': $cookie_domain = preg_replace('/^[\w]+:\/\/(.+)$/','\\1',$v); break;
+							case 'path': $cookie_path = $v; break;
+							default:
+								$cookie_name = $k;
+								$cookie_value = $v;
+						}
+					}else if(strtolower($cookie) == 'secure'){
+						$secure = true;
+					}
+				}
+				$cookie_domain = substr(\phpman\Util::path_absolute('http://'.$cookie_domain,$cookie_path),7);
+				if($cookie_expires !== null && $cookie_expires < time()){
+					if(isset($this->cookie[$cookie_domain][$cookie_name])) unset($this->cookie[$cookie_domain][$cookie_name]);
+				}else{
+					$this->cookie[$cookie_domain][$cookie_name] = array('value'=>$cookie_value,'expires'=>$cookie_expires,'secure'=>$secure);
+				}
+			}
+		}		
 		$this->request_header = array();
 		$this->request_vars = array();
 
