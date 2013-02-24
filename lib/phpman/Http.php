@@ -9,6 +9,7 @@ class Http{
 	
 	private $request_header = array();
 	private $request_vars = array();
+	private $request_file_vars = array();
 	private $head;
 	private $body;
 	private $url;
@@ -28,6 +29,11 @@ class Http{
 	}
 	public function vars($key,$value=null){
 		$this->request_vars[$key] = $value;
+		if(isset($this->request_file_vars[$key])) unset($this->request_file_vars[$key]);
+	}
+	public function file_vars($key,$value){
+		$this->request_file_vars[$key] = $value;
+		if(isset($this->request_vars[$key])) unset($this->request_vars[$key]);
 	}
 	public function setopt($key,$value){
 		curl_setopt($this->resource,$key,$value);
@@ -86,6 +92,10 @@ class Http{
 		if(!isset($this->request_header['Expect'])){
 			$this->request_header['Expect'] = null;
 		}
+		if($this->status_redirect){
+			curl_setopt($this->resource,CURLOPT_FOLLOWLOCATION,true);
+			curl_setopt($this->resource,CURLOPT_AUTOREFERER,true);
+		}
 		switch($method){
 			case 'POST': curl_setopt($this->resource,CURLOPT_POST,true); break;
 			case 'GET': curl_setopt($this->resource,CURLOPT_HTTPGET,true); break;
@@ -96,9 +106,19 @@ class Http{
 		switch($method){
 			case 'POST':
 				$vars = array();
-				foreach(explode('&',http_build_query($this->request_vars)) as $q){
-					list($k,$v) = explode('=',$q,2);
-					$vars[str_replace(array('%5B','%5D'),array('[',']'),$k)] = $v;
+				if(!empty($this->request_vars)){
+					foreach(explode('&',http_build_query($this->request_vars)) as $q){
+						list($k,$v) = explode('=',$q,2);
+						if(substr($k,-3) == '%5D') $k = str_replace(array('%5B','%5D'),array('[',']'),$k);
+						$vars[$k] = $v;
+					}
+				}
+				if(!empty($this->request_file_vars)){
+					foreach(explode('&',http_build_query($this->request_file_vars)) as $q){
+						list($k,$v) = explode('=',$q,2);
+						if(substr($k,-3) == '%5D') $k = str_replace(array('%5B','%5D'),array('[',']'),$k);
+						$vars[$k] = '@'.urldecode($v);
+					}
 				}
 				curl_setopt($this->resource,CURLOPT_POSTFIELDS,$vars);
 				break;
@@ -106,7 +126,7 @@ class Http{
 			case 'HEAD':
 			case 'PUT':
 			case 'DELETE':
-				$url = $url.'?'.http_build_query($this->request_vars);
+				$url = $url.(!empty($this->request_vars) ? '?'.http_build_query($this->request_vars) : '');
 		}
 		curl_setopt($this->resource,CURLOPT_URL,$url);
 		curl_setopt($this->resource,CURLOPT_RETURNTRANSFER,true);		
@@ -125,29 +145,14 @@ class Http{
 			)
 		);
 		curl_setopt($this->resource,CURLOPT_TIMEOUT,$this->timeout);
-		
-		
-		//curl_setopt($this->resource,CURLOPT_SSL_VERIFYPEER,false); // サーバー証明書の検証をしない		
-		
-		if($this->status_redirect){
-			curl_setopt($this->resource,CURLOPT_FOLLOWLOCATION,true); // リダイレクトする
-			curl_setopt($this->resource,CURLOPT_AUTOREFERER,true); // リダイレクト時にリファーをつける
-		}
-		
-		//curl_setopt($this->resource,CURLOPT_UPLOAD,true); // アップロードの準備		
-
-		// SSL
-		//curl_setopt($this->resource,CURLOPT_SSL_VERIFYPEER,true); // SSL検証する
-		//curl_setopt($this->resource,CURLOPT_CAINFO, 'ca.crt' );
-		
-		//curl_setopt($this->resource,CURLOPT_SSL_VERIFYPEER,true); // SSL検証しない
+		//curl_setopt($this->resource,CURLOPT_SSL_VERIFYPEER,false); // サーバー証明書の検証をしない
 		
 		$rtn = curl_exec($this->resource);
+		if($rtn === false) throw new \RuntimeException();
 		list($this->head,$this->body) = explode("\r\n\r\n",$rtn);
 
 		$this->request_header = array();
 		$this->request_vars = array();
-
 
 		return $this;
 	}
