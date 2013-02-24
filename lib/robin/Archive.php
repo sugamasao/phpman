@@ -1,5 +1,5 @@
 <?php
-namespace phpman;
+namespace robin;
 /**
  * アーカイブの作成、解凍を行う
  * @author tokushima

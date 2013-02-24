@@ -4,7 +4,7 @@ namespace phpman;
  * 基底クラス
  * @author tokushima
  */
-class Object{
+class Object implements \IteratorAggregate{
 	static private $_m = array(array(),array());
 	private $_im = array();
 	protected $_;
@@ -725,13 +725,7 @@ class Object{
 			throw new \InvalidArgumentException($this->_.' must be an '.$type);
 		}
 	}
-	
-	/**
-	 * 連想配列としての値を返す
-	 * @return array
-	 */
-	public function hash(){
-		if(method_exists($this,'__hash__')) return $this->__hash__();
+	public function getIterator(){
 		$r = array();
 		foreach($this->props() as $n => $v){
 			if($this->prop_anon($n,'get') !== false && $this->prop_anon($n,'hash') !== false){
@@ -741,49 +735,7 @@ class Object{
 				}
 			}
 		}
-		return $r;
-		/***
-			# hash_fm
-			$obj1 = newclass('
-							class * extends self{
-								protected $aaa = "hoge";
-								protected $bbb = 1;
-								protected $ccc = 123;
-							}
-						');
-			eq(array("aaa"=>"hoge","bbb"=>"1","ccc"=>"123"),$obj1->hash());
-
-			$obj2 = newclass(sprintf('
-							@var serial $aaa @["hash"=>false]
-							@var number $bbb
-							-----------------------------------
-							class * extends %s{
-								protected function __fm_ccc__(){
-									return "[".$this->ccc."]";
-								}
-							}
-						',get_class($obj1)));
-			eq(array("bbb"=>1,"ccc"=>"[123]"),$obj2->hash());
-		*/
-		/***
-			# hash_type
-			$obj = newclass('
-							@var serial $aaa
-							@var number $bbb
-							@var boolean $ccc
-							@var string $ddd
-							@var intdate $eee
-							-----------------------
-							class * extends self{
-								protected $aaa=1;
-								protected $bbb=2;
-								protected $ccc=false;
-								protected $ddd="ABC";
-								protected $eee=20100420;
-							}
-						');
-			eq(array("aaa"=>1,"bbb"=>2,"ccc"=>false,"ddd"=>"ABC","eee"=>"2010/04/20"),$obj->hash());
-		 */
+		return new \ArrayIterator($r);
 	}
 	final private function ___get___(){
 		if($this->prop_anon($this->_,'get') === false) throw new \InvalidArgumentException('not permitted');

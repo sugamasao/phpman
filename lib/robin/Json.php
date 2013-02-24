@@ -1,5 +1,5 @@
 <?php
-namespace phpman;
+namespace robin;
 /**
  * JSONを操作する
  * @author tokushima

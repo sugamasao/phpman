@@ -10,12 +10,10 @@ namespace phpman;
  * @var integer $line 発生した行
  * @var mixed $value 内容
  * @conf string $level ログレベル (none,error,warn,info,debug)
- * @conf boolean $disp 標準出力に出すか
  */
 class Log{
 	use \phpman\StaticModule;
 	
-	static private $stdout = true;
 	static private $level_strs = array('none','error','warn','info','debug');
 	static private $logs = array();
 	static private $id;
@@ -113,7 +111,6 @@ class Log{
 		if(!empty(self::$logs)){
 			foreach(self::$logs as $log){
 				if(self::cur_level() >= $log->level()){
-					if(self::disp() && self::$stdout) print(((string)$log).PHP_EOL);
 					switch($log->fm_level()){
 						/**
 						 * debugログの場合の処理
@@ -154,38 +151,14 @@ class Log{
 		 * フラッシュ時の処理
 		 * @param self[] $logs
 		 * @param string $id
-		 * @param boolean $stdout 標準出力に出力するか
 		 */
-		self::module('flush',self::$logs,self::$id,self::$stdout);
+		self::module('flush',self::$logs,self::$id);
 		/**
 		 * フラッシュの後処理
 		 * @param string $id
 		 */
 		self::module('after_flush',self::$id);
 		self::$logs = array();
-	}
-	/**
-	 * 一時的に無効にされた標準出力へのログ出力を有効にする
-	 * ログのモードに依存する
-	 */
-	static public function enable_display(){
-		self::debug('log stdout on');
-		self::$stdout = true;
-	}
-
-	/**
-	 * 標準出力へのログ出力を一時的に無効にする
-	 */
-	static public function disable_display(){
-		self::debug('log stdout off');
-		self::$stdout = false;
-	}
-	/**
-	 * 標準出力へのログ可不可
-	 * @return boolean
-	 */
-	static public function is_display(){
-		return self::$stdout;
 	}
 	/**
 	 * errorを生成
@@ -229,14 +202,5 @@ class Log{
 	 */
 	static public function trace($value){
 		foreach(func_get_args() as $value) self::$logs[] = new self(-1,$value);
-	}
-	/**
-	 * var_dumpで出力する
-	 * @param mixed $value 内容
-	 */
-	static public function d($value){
-		list($debug_backtrace) = debug_backtrace(false);
-		$args = func_get_args();
-		var_dump(array_merge(array($debug_backtrace['file'].':'.$debug_backtrace['line']),$args));
 	}
 }
