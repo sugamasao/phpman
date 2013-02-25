@@ -14,6 +14,7 @@ $flow->execute([
 		,'redirect_map'=>['redirect'=>'template_defa']
 		,'package/action'=>['action'=>'local.test.flow.PackageAction']
 		,'request'=>['action'=>'local.test.flow.RequestAction::index']
+		,'request/redirect'=>['action'=>'local.test.flow.RequestAction::redirect']		
 	]
 	//	,'error_redirect'=>'template_abc'
 	,'nomatch_redirect'=>'template_abc'

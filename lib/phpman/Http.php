@@ -221,7 +221,7 @@ class Http{
 						$secure = true;
 					}
 				}
-				$cookie_domain = substr(Testman_Util::path_absolute('http://'.$cookie_domain,$cookie_path),7);
+				$cookie_domain = substr(\phpman\Util::path_absolute('http://'.$cookie_domain,$cookie_path),7);
 				if($cookie_expires !== null && $cookie_expires < time()){
 					if(isset($this->cookie[$cookie_domain][$cookie_name])) unset($this->cookie[$cookie_domain][$cookie_name]);
 				}else{

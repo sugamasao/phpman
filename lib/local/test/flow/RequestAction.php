@@ -9,4 +9,8 @@ class RequestAction{
 		$req->write_cookie('set_cookie');
 		return $req->ar_vars();
 	}
+	public function redirect(){
+		header('Location: http://localhost/phpman/test_index/request');
+		exit;
+	}
 }
