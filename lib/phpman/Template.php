@@ -176,7 +176,7 @@ class Template{
 		 * @param phpman.String $obj
 		 */
 		$this->object_module('before_template',\phpman\String::ref($obj,$src));
-		$src = $this->rtif($this->rtloop($this->rtunit($this->html_form($this->html_list((string)$obj)))));
+		$src = $this->rtif($this->rtloop($this->html_form($this->html_list((string)$obj))));
 		/**
 		 * テンプレート作成の後処理
 		 * @param phpman.String $obj
@@ -275,42 +275,9 @@ class Template{
 	}
 	private function replace_parse_url($src,$base,$dep,$rep){
 		if(!preg_match("/(^[\w]+:\/\/)|(^__PHP_TAG_START)|(^\{\\$)|(^\w+:)|(^[#\?])/",$rep)){
-			$src = str_replace($dep,str_replace($rep,$this->ab_path($base,$rep),$dep),$src);
+			$src = str_replace($dep,str_replace($rep,\phpman\Util::path_absolute($base,$rep),$dep),$src);
 		}
 		return $src;
-	}
-	private function ab_path($a,$b){
-		if($b === '' || $b === null) return $a;
-		if($a === '' || $a === null || preg_match("/^[a-zA-Z]+:/",$b)) return $b;
-		if(preg_match("/^[\w]+\:\/\/[^\/]+/",$a,$h)){
-			$a = preg_replace("/^(.+?)[".(($b[0] === '#') ? '#' : "#\?")."].*$/","\\1",$a);
-			if($b[0] == '#' || $b[0] == '?') return $a.$b;
-			if(substr($a,-1) != '/') $b = (substr($b,0,2) == './') ? '.'.$b : (($b[0] != '.' && $b[0] != '/') ? '../'.$b : $b);
-			if($b[0] == '/' && isset($h[0])) return $h[0].$b;
-		}else if($b[0] == '/'){
-			return $b;
-		}
-		$p = array(array('://','/./','//'),array('#R#','/','/'),array("/^\/(.+)$/","/^(\w):\/(.+)$/"),array("#T#\\1","\\1#W#\\2",''),array('#R#','#T#','#W#'),array('://','/',':/'));
-		$a = preg_replace($p[2],$p[3],str_replace($p[0],$p[1],$a));
-		$b = preg_replace($p[2],$p[3],str_replace($p[0],$p[1],$b));
-		$d = $t = $r = '';
-		if(strpos($a,'#R#')){
-			list($r) = explode('/',$a,2);
-			$a = substr($a,strlen($r));
-			$b = str_replace('#T#','',$b);
-		}
-		$al = preg_split("/\//",$a,-1,PREG_SPLIT_NO_EMPTY);
-		$bl = preg_split("/\//",$b,-1,PREG_SPLIT_NO_EMPTY);
-
-		for($i=0;$i<sizeof($al)-substr_count($b,'../');$i++){
-			if($al[$i] != '.' && $al[$i] != '..') $d .= $al[$i].'/';
-		}
-		for($i=0;$i<sizeof($bl);$i++){
-			if($bl[$i] != '.' && $bl[$i] != '..') $t .= '/'.$bl[$i];
-		}
-		$t = (!empty($d)) ? substr($t,1) : $t;
-		$d = (!empty($d) && $d[0] != '/' && substr($d,0,3) != '#T#' && !strpos($d,'#W#')) ? '/'.$d : $d;
-		return str_replace($p[4],$p[5],$r.$d.$t);
 	}
 	private function read_src($filename){
 		$src = file_get_contents($filename);
@@ -336,7 +303,7 @@ class Template{
 			$base_filename = $filename;
 			$blocks = $paths = array();
 			while(\phpman\Xml::set($e,'<:>'.$this->rtcomment($src).'</:>','rt:extends') !== false){
-				$href = $this->ab_path(str_replace("\\",'/',dirname($filename)),$e->in_attr('href'));
+				$href = \phpman\Util::path_absolute(str_replace("\\",'/',dirname($filename)),$e->in_attr('href'));
 				if(!$e->is_attr('href') || !is_file($href)) throw new \LogicException('href not found '.$filename);
 				if($filename === $href) throw new \LogicException('Infinite Recursion Error'.$filename);
 				\phpman\Xml::set($bx,'<:>'.$this->rtcomment($src).'</:>',':');
@@ -361,7 +328,7 @@ class Template{
 					foreach($bx->in('rt:block') as $b) $src = str_replace($b->plain(),$b->value(),$src);
 				}
 			}else{
-				if(!empty($this->template_super)) $src = $this->read_src($this->ab_path(str_replace("\\",'/',dirname($base_filename)),$this->template_super));
+				if(!empty($this->template_super)) $src = $this->read_src(\phpman\Util::path_absolute(str_replace("\\",'/',dirname($base_filename)),$this->template_super));
 				while(\phpman\Xml::set($b,$src,'rt:block')){
 					$n = $b->in_attr('name');
 					$src = str_replace($b->plain(),(array_key_exists($n,$blocks) ? $blocks[$n] : $b->value()),$src);
@@ -378,106 +345,6 @@ class Template{
 			$src = '123<rt:comment>aaaaaaaa</rt:comment>456';
 			$t = new self();
 			eq('123456',$t->get($src));
-		 */
-	}
-	private function rtunit($src){
-		if(strpos($src,'rt:unit') !== false){
-			while(\phpman\Xml::set($tag,$src,'rt:unit')){
-				$tag->escape(false);
-				$uniq = uniqid('');
-				$param = $tag->in_attr('param');
-				$var = '$'.$tag->in_attr('var','_var_'.$uniq);
-				$offset = $tag->in_attr('offset',1);
-				$total = $tag->in_attr('total','_total_'.$uniq);
-				$cols = ($tag->is_attr('cols')) ? (ctype_digit($tag->in_attr('cols')) ? $tag->in_attr('cols') : $this->variable_string($this->parse_plain_variable($tag->in_attr('cols')))) : 1;
-				$rows = ($tag->is_attr('rows')) ? (ctype_digit($tag->in_attr('rows')) ? $tag->in_attr('rows') : $this->variable_string($this->parse_plain_variable($tag->in_attr('rows')))) : 0;
-				$value = $tag->value();
-
-				$cols_count = '$_ucount_'.$uniq;
-				$cols_total = '$'.$tag->in_attr('cols_total','_cols_total_'.$uniq);
-				$rows_count = '$'.$tag->in_attr('counter','_counter_'.$uniq);
-				$rows_total = '$'.$tag->in_attr('rows_total','_rows_total_'.$uniq);
-				$ucols = '$_ucols_'.$uniq;
-				$urows = '$_urows_'.$uniq;
-				$ulimit = '$_ulimit_'.$uniq;
-				$ufirst = '$_ufirst_'.$uniq;
-				$ufirstnm = '_ufirstnm_'.$uniq;
-
-				$ukey = '_ukey_'.$uniq;
-				$uvar = '_uvar_'.$uniq;
-
-				$src = str_replace(
-							$tag->plain(),
-							sprintf('<?php %s=%s; %s=%s; %s=%s=1; %s=null; %s=%s*%s; %s=array(); ?>'
-									.'<rt:loop param="%s" var="%s" key="%s" total="%s" offset="%s" first="%s">'
-										.'<?php if(%s <= %s){ %s[$%s]=$%s; } ?>'
-										.'<rt:first><?php %s=$%s; ?></rt:first>'
-										.'<rt:last><?php %s=%s; ?></rt:last>'
-										.'<?php if(%s===%s){ ?>'
-											.'<?php if(isset(%s)){ $%s=""; } ?>'
-											.'<?php %s=sizeof(%s); ?>'
-											.'<?php %s=ceil($%s/%s); ?>'
-											.'%s'
-											.'<?php %s=array(); %s=null; %s=1; %s++; ?>'
-										.'<?php }else{ %s++; } ?>'
-									.'</rt:loop>'
-									,$ucols,$cols,$urows,$rows,$cols_count,$rows_count,$ufirst,$ulimit,$ucols,$urows,$var
-									,$param,$uvar,$ukey,$total,$offset,$ufirstnm
-										,$cols_count,$ucols,$var,$ukey,$uvar
-										,$ufirst,$ufirstnm
-										,$cols_count,$ucols
-										,$cols_count,$ucols
-											,$ufirst,$ufirstnm
-											,$cols_total,$var
-											,$rows_total,$total,$ucols
-											,$value
-											,$var,$ufirst,$cols_count,$rows_count
-										,$cols_count
-							)
-							.($tag->is_attr('rows') ?
-								sprintf('<?php for(;%s<=%s;%s++){ %s=array(); ?>%s<?php } ?>',$rows_count,$rows,$rows_count,$var,$value) : ''
-							)
-							,$src
-						);
-			}
-		}
-		return $src;
-		/***
-			# unit
-			$src = pre('
-						<rt:unit param="abc" var="unit_list" cols="3" offset="2" counter="counter">
-						<rt:first>FIRST</rt:first>{$counter}{
-						<rt:loop param="unit_list" var="a"><rt:first>first</rt:first>{$a}<rt:last>last</rt:last></rt:loop>
-						}
-						<rt:last>LAST</rt:last>
-						</rt:unit>
-					');
-			$result = pre('
-							FIRST1{
-							first234last}
-							2{
-							first567last}
-							3{
-							first8910last}
-							LAST
-						');
-			$t = new self();
-			$t->vars("abc",array(1,2,3,4,5,6,7,8,9,10));
-			eq($result,$t->get($src));
-		*/
-		/***
-			# rows_fill
-			$src = pre('<rt:unit param="abc" var="abc_var" cols="3" rows="3">[<rt:loop param="abc_var" var="a" limit="3"><rt:fill>0<rt:else />{$a}</rt:fill></rt:loop>]</rt:unit>');
-			$result = '[123][400][000]';
-			$t = new self();
-			$t->vars("abc",array(1,2,3,4));
-			eq($result,$t->get($src));
-
-			$src = pre('<rt:unit param="abc" var="abc_var" offset="3" cols="3" rows="3">[<rt:loop param="abc_var" var="a" limit="3"><rt:fill>0<rt:else />{$a}</rt:fill></rt:loop>]</rt:unit>');
-			$result = '[340][000][000]';
-			$t = new self();
-			$t->vars("abc",array(1,2,3,4));
-			eq($result,$t->get($src));
 		 */
 	}
 	private function rtloop($src){
