@@ -5,25 +5,34 @@ class Http{
 	private $resource;
 	private $agent;
 	private $timeout = 30;
-	private $status_redirect = true;
+	private $redirect_max = 20;
 	
 	private $request_header = array();
 	private $request_vars = array();
 	private $request_file_vars = array();
 	private $head;
 	private $body;
-	private $url;
 	private $cookie = array();
+	private $url;
+	private $status;
 	
-	public function __construct($agent=null,$timeout=30,$status_redirect=true){
+	public function __construct($agent=null,$timeout=30,$redirect_max=20){
 		$this->agent = $agent;
 		$this->timeout = (int)$timeout;
-		$this->status_redirect = (boolean)$status_redirect;
-		
-		$this->resource = curl_init();	
+		$this->redirect_max = (int)$redirect_max;
+		$this->resource = curl_init();
+	}
+	public function redirect_max($redirect_max){
+		$this->redirect_max = (integer)$redirect_max;
+	}
+	public function timeout($timeout){
+		$this->timeout = (int)$timeout;
+	}
+	public function agent($agent){
+		$this->agent = $agent;
 	}
 	public function __toString(){
-		return $this->body;
+		return $this->body();
 	}
 	public function header($key,$value=null){
 		$this->request_header[$key] = $value;
@@ -43,10 +52,13 @@ class Http{
 		return $this->head;
 	}
 	public function body(){
-		return $this->body;
+		return ($this->body === null || is_bool($this->body)) ? '' : $this->body;
 	}
 	public function url(){
 		return $this->url;
+	}
+	public function status(){
+		return $this->status;
 	}
 	public function do_head($url){
 		return $this->request('HEAD',$url);
@@ -64,36 +76,24 @@ class Http{
 		return $this->request('POST',$url);
 	}
 	public function do_download($url,$download_path){
-		$fp = fopen($download_path,'w');
-			curl_setopt($this->resource,CURLOPT_FILE,$fp);
-			$this->request('GET',$url);
-		fclose($fp);
-		return $this;
+		return $this->request('GET',$url,$download_path);
 	}
 	public function do_post_download($url,$download_path){
-		$fp = fopen($download_path,'w');
-		curl_setopt($this->resource,CURLOPT_FILE,$fp);
-		$this->request('POST',$url);
-		fclose($fp);
-		return $this;
+		return $this->request('POST',$url,$download_path);
 	}
-	public function status(){
-		return curl_getinfo($this->resource,CURLINFO_HTTP_CODE);
-	}
-	private function request($method,$url){
+	private function request($method,$url,$download_path=null){
 		$url_info = parse_url($url);
+		$cookie_base_domain = $url_info['host'].(isset($url_info['path']) ? $url_info['path'] : '');
 		if(isset($url_info['query'])){
 			parse_str($url_info['query'],$vars);
 			foreach($vars as $k => $v){
 				if(!isset($this->request_vars[$k])) $this->request_vars[$k] = $v;
 			}
-			list($url) = explode('?',$url);
+			list($url) = explode('?',$url,2);
 		}
-		$this->url = $url;
 		if(!isset($this->request_header['Expect'])){
 			$this->request_header['Expect'] = null;
 		}
-		$cookie_base_domain = preg_replace('/^[\w]+:\/\/(.+)$/','\\1',$this->url);		
 		if(!isset($this->request_header['Cookie'])){
 			$cookies = '';
 			foreach($this->cookie as $domain => $cookie_value){
@@ -103,34 +103,35 @@ class Http{
 					}
 				}
 			}
-			$this->request_header['Cookie'] = $cookies;
+			curl_setopt($this->resource,CURLOPT_COOKIE,$cookies);
 		}
-		if($this->status_redirect){
+		if($this->redirect_max > 1){
 			curl_setopt($this->resource,CURLOPT_FOLLOWLOCATION,true);
 			curl_setopt($this->resource,CURLOPT_AUTOREFERER,true);
+			curl_setopt($this->resource,CURLOPT_MAXREDIRS,$this->redirect_max);
+		}else{
+			curl_setopt($this->resource,CURLOPT_FOLLOWLOCATION,false);
 		}
 		switch($method){
 			case 'POST': curl_setopt($this->resource,CURLOPT_POST,true); break;
 			case 'GET': curl_setopt($this->resource,CURLOPT_HTTPGET,true); break;
 			case 'HEAD': curl_setopt($this->resource,CURLOPT_NOBODY,true); break;
 			case 'PUT': curl_setopt($this->resource,CURLOPT_PUT,true); break;
-			case 'DELETE': curl_setopt($this->resource,CURLOPT_CUSTOMREQUEST,'DELETE'); break;			
+			case 'DELETE': curl_setopt($this->resource,CURLOPT_CUSTOMREQUEST,'DELETE'); break;
 		}
 		switch($method){
 			case 'POST':
 				$vars = array();
 				if(!empty($this->request_vars)){
 					foreach(explode('&',http_build_query($this->request_vars)) as $q){
-						list($k,$v) = explode('=',$q,2);
-						if(substr($k,-3) == '%5D') $k = str_replace(array('%5B','%5D'),array('[',']'),$k);
-						$vars[$k] = $v;
+						$s = explode('=',$q,2);
+						$vars[urldecode($s[0])] = isset($s[1]) ? urldecode($s[1]) : null;
 					}
 				}
 				if(!empty($this->request_file_vars)){
 					foreach(explode('&',http_build_query($this->request_file_vars)) as $q){
-						list($k,$v) = explode('=',$q,2);
-						if(substr($k,-3) == '%5D') $k = str_replace(array('%5B','%5D'),array('[',']'),$k);
-						$vars[$k] = '@'.urldecode($v);
+						$s = explode('=',$q,2);
+						$vars[urldecode($s[0])] = isset($s[1]) ? '@'.urldecode($s[1]) : null;
 					}
 				}
 				curl_setopt($this->resource,CURLOPT_POSTFIELDS,$vars);
@@ -142,28 +143,58 @@ class Http{
 				$url = $url.(!empty($this->request_vars) ? '?'.http_build_query($this->request_vars) : '');
 		}
 		curl_setopt($this->resource,CURLOPT_URL,$url);
-		curl_setopt($this->resource,CURLOPT_RETURNTRANSFER,true);		
-		curl_setopt($this->resource,CURLOPT_HEADER,true);
+		curl_setopt($this->resource,CURLOPT_HEADER,false);
+		curl_setopt($this->resource,CURLOPT_RETURNTRANSFER,false);
 		curl_setopt($this->resource,CURLOPT_FORBID_REUSE,true);
+		curl_setopt($this->resource,CURLOPT_FAILONERROR,false);
+		curl_setopt($this->resource,CURLOPT_TIMEOUT,$this->timeout);
 		curl_setopt($this->resource,CURLOPT_HTTPHEADER,
-			array_map(function($k,$v){
-				return $k.': '.$v;
-			}
-			,array_keys($this->request_header),$this->request_header)
+				array_map(function($k,$v){
+			return $k.': '.$v;
+		}
+		,array_keys($this->request_header)
+		,$this->request_header
+		)
 		);
 		curl_setopt($this->resource,CURLOPT_USERAGENT,
-			(empty($this->agent) ? 
-					(isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : null) : 
-					$this->agent
-			)
+				(empty($this->agent) ?
+						(isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : null) :
+						$this->agent
+				)
 		);
-		curl_setopt($this->resource,CURLOPT_TIMEOUT,$this->timeout);
-		//curl_setopt($this->resource,CURLOPT_SSL_VERIFYPEER,false); // サーバー証明書の検証をしない
-		
-		$rtn = curl_exec($this->resource);
-		if($rtn === false) throw new \RuntimeException('Error');
-		list($this->head,$this->body) = explode("\r\n\r\n",$rtn);
-
+		curl_setopt($this->resource,CURLOPT_HEADERFUNCTION,function($c,$data){
+			$this->head .= $data;
+			return strlen($data);
+		});
+		if(empty($download_path)){
+			curl_setopt($this->resource,CURLOPT_WRITEFUNCTION,function($c,$data){
+				$this->body .= $data;
+				return strlen($data);
+			});
+		}else{
+			if(!is_dir(dirname($download_path))) mkdir(dirname($download_path),0777,true);
+			$fp = fopen($download_path,'wb');
+			curl_setopt($this->resource,CURLOPT_WRITEFUNCTION,function($c,$data) use(&$fp){
+				fwrite($fp,$data);
+				return strlen($data);
+			});
+		}
+		$this->request_header = $this->request_vars = array();
+		$this->head = $this->body = '';
+		curl_exec($this->resource);
+	
+		$this->url = curl_getinfo($this->resource,CURLINFO_EFFECTIVE_URL);
+		$this->status = curl_getinfo($this->resource,CURLINFO_HTTP_CODE);
+	
+		if($err_code = curl_errno($this->resource) > 0){
+			if($err_code == 47) return $this;
+			throw new \RuntimeException($err_code.': '.curl_error($this->resource));
+		}
+		if(!empty($download_path)){
+			curl_close($this->resource);
+			fclose($fp);
+			$this->resource = curl_init();
+		}
 		if(preg_match_all('/Set-Cookie:[\s]*(.+)/i',$this->head,$match)){
 			$unsetcookie = $setcookie = array();
 			foreach($match[1] as $cookies){
@@ -171,7 +202,7 @@ class Http{
 				$cookie_domain = $cookie_base_domain;
 				$cookie_path = '/';
 				$secure = false;
-		
+	
 				foreach(explode(';',$cookies) as $cookie){
 					$cookie = trim($cookie);
 					if(strpos($cookie,'=') !== false){
@@ -190,17 +221,14 @@ class Http{
 						$secure = true;
 					}
 				}
-				$cookie_domain = substr(\phpman\Util::path_absolute('http://'.$cookie_domain,$cookie_path),7);
+				$cookie_domain = substr(Testman_Util::path_absolute('http://'.$cookie_domain,$cookie_path),7);
 				if($cookie_expires !== null && $cookie_expires < time()){
 					if(isset($this->cookie[$cookie_domain][$cookie_name])) unset($this->cookie[$cookie_domain][$cookie_name]);
 				}else{
 					$this->cookie[$cookie_domain][$cookie_name] = array('value'=>$cookie_value,'expires'=>$cookie_expires,'secure'=>$secure);
 				}
 			}
-		}		
-		$this->request_header = array();
-		$this->request_vars = array();
-
+		}
 		return $this;
 	}
 	public function __destruct(){

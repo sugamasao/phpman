@@ -165,9 +165,7 @@ class Util{
 	 * @return string
 	 */
 	static public function path_absolute($a,$b){
-		$a = str_replace("\\",'/',$a);
 		if($b === '' || $b === null) return $a;
-		$b = str_replace("\\",'/',$b);
 		if($a === '' || $a === null || preg_match("/^[a-zA-Z]+:/",$b)) return $b;
 		if(preg_match("/^[\w]+\:\/\/[^\/]+/",$a,$h)){
 			$a = preg_replace("/^(.+?)[".(($b[0] === '#') ? '#' : "#\?")."].*$/","\\1",$a);
@@ -188,7 +186,7 @@ class Util{
 		}
 		$al = preg_split("/\//",$a,-1,PREG_SPLIT_NO_EMPTY);
 		$bl = preg_split("/\//",$b,-1,PREG_SPLIT_NO_EMPTY);
-	
+
 		for($i=0;$i<sizeof($al)-substr_count($b,'../');$i++){
 			if($al[$i] != '.' && $al[$i] != '..') $d .= $al[$i].'/';
 		}

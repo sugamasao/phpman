@@ -222,8 +222,14 @@ class Template{
 		 * @param phpman.String $obj
 		 */
 		$this->object_module('before_exec_template',\phpman\String::ref($_obj_,$_src_));
-		$this->vars('_t_',new \phpman\TemplateHelper());
 		ob_start();
+			$_htmlenc_ = function($v){
+				if(!empty($v) && is_string($v)){
+					$v = mb_convert_encoding($v,'UTF-8',mb_detect_encoding($v));
+					return htmlentities($v,ENT_QUOTES,'UTF-8');
+				}
+				return $v;
+			};
 			if(is_array($this->vars) && !empty($this->vars)) extract($this->vars);
 			eval('?><?php $_display_exception_='.((\phpman\Conf::get('display_exception') === true) ? 'true' : 'false').'; ?>'.((string)$_obj_));
 		$_eval_src_ = ob_get_clean();
@@ -997,7 +1003,7 @@ class Template{
 				if($this->is_reference($obj)){
 					switch($lname){
 						case 'textarea':
-							$obj->value($this->no_exception_str(sprintf('{$_t_.htmlencode(%s)}',((preg_match("/^{\$(.+)}$/",$originalName,$match)) ? '{$$'.$match[1].'}' : '{$'.$originalName.'}'))));
+							$obj->value($this->no_exception_str(sprintf('{$_htmlenc_(%s)}',((preg_match("/^{\$(.+)}$/",$originalName,$match)) ? '{$$'.$match[1].'}' : '{$'.$originalName.'}'))));
 							break;
 						case 'select':
 							$select = $obj->value();
@@ -1036,7 +1042,7 @@ class Template{
 								case 'number':
 								case 'range':
 								case 'color':
-									$obj->attr('value',$this->no_exception_str(sprintf('{$_t_.htmlencode(%s)}',
+									$obj->attr('value',$this->no_exception_str(sprintf('{$_htmlenc_(%s)}',
 																((preg_match("/^\{\$(.+)\}$/",$originalName,$match)) ?
 																	'{$$'.$match[1].'}' :
 																	'{$'.$originalName.'}'))));
