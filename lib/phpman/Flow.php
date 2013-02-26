@@ -2,7 +2,7 @@
 namespace phpman;
 
 class Flow{
-	use \phpman\InstanceModule;
+	use \phpman\Connector;
 	private $branch_url;
 	private $app_url;
 	private $media_url;
@@ -83,7 +83,7 @@ class Flow{
 			self::$output_maps[$key] = array();
 			try{
 				ob_start();
-					include_once($file);
+					include($file);
 				ob_end_clean();
 			}catch(\Exception $e){
 				\phpman\Log::error($e);
@@ -100,9 +100,10 @@ class Flow{
 		}
 		throw new \InvalidArgumentException($url.' not found');
 	}
-	private function template($path,$media=null){
+	private function template(array $vars,$path,$media=null){
 		if(!isset($media)) $media = $this->media_url;
 		$template = new \phpman\Template($media);
+		$template->cp($vars);
 		$src = $template->read($path);
 		print($src);
 		exit;
@@ -115,7 +116,7 @@ class Flow{
 		$result_vars = array();
 		$pathinfo = preg_replace("/(.*?)\?.*/","\\1",(isset($_SERVER['PATH_INFO']) ? $_SERVER['PATH_INFO'] : null));
 		$map = $this->read($map);
-		
+
 		if(self::$get_maps){
 			self::$output_maps[basename(self::entry_file())] = $map['patterns'];
 			self::$get_maps = false;
@@ -141,18 +142,19 @@ class Flow{
 						header('Location: '.preg_replace('/^.+(:\/\/.+)$/','https\\1',\phpman\Request::current_url()));
 						exit;
 					}
-				}				
+				}		
 				try{
 					if(isset($pattern['redirect'])){
 						$this->redirect($pattern['redirect'],$map);
 					}
+					$result_vars = array();
 					if(!empty($pattern['action'])){
 						list($class,$method) = explode('::',$pattern['action']);
 						$ins = $this->str_reflection($class);
-						if($ins instanceof \phpman\InstanceModule){
-							foreach(array($map['modules'],$pattern['modules']) as $modules){
-								foreach($modules as $m){
-									$ins->set_object_module($this->str_reflection($m));
+						if($ins instanceof \phpman\Connector){
+							foreach(array($map['plugins'],$pattern['plugins']) as $plugins){
+								foreach($plugins as $m){
+									$ins->instance_plugin($this->str_reflection($m));
 								}
 							}
 						}
@@ -160,12 +162,12 @@ class Flow{
 						if($result_vars === null) $result_vars = array();
 					}
 					if(isset($pattern['template'])){
-						$this->template(\phpman\Util::path_absolute($this->template_path,$pattern['template']));
+						$this->template($result_vars,\phpman\Util::path_absolute($this->template_path,$pattern['template']));
 					}else if(
 						isset($pattern['@'])
 						&& is_file($t=$pattern['@'].'/resources/templates/'.preg_replace('/^.+::/','',$pattern['action']).'.html')
 					){
-						$this->template($t,$this->branch_url.$this->package_media_url.'/'.$pattern['pattern_id']);
+						$this->template($result_vars,$t,$this->branch_url.$this->package_media_url.'/'.$pattern['pattern_id']);
 					}else{
 						print(json_encode(array('result'=>$result_vars)));
 						return;
@@ -173,19 +175,19 @@ class Flow{
 				}catch(\Exception $e){
 					if(isset($map['error_status'])) \phpman\HttpHeader::send_status($map['error_status']);
 					if(isset($pattern['@']) && is_file($t=$pattern['@'].'/resources/templates/error.html')){
-						$this->template($t,$this->branch_url.$this->package_media_url.'/'.$pattern['pattern_id']);
+						$this->template($result_vars,$t,$this->branch_url.$this->package_media_url.'/'.$pattern['pattern_id']);
 					}
 					if(isset($pattern['error_redirect'])){
 						$this->redirect($pattern['error_redirect'],$map);
 					}
 					if(isset($pattern['error_template'])){
-						$this->template(\phpman\Util::path_absolute($this->template_path,$pattern['error_template']));
+						$this->template($result_vars,\phpman\Util::path_absolute($this->template_path,$pattern['error_template']));
 					}
 					if(isset($map['error_redirect'])){
 						$this->redirect($map['error_redirect'],$map);
 					}
 					if(isset($map['error_template'])){
-						$this->template(\phpman\Util::path_absolute($this->template_path,$map['error_template']));
+						$this->template($result_vars,\phpman\Util::path_absolute($this->template_path,$map['error_template']));
 					}
 					print(json_encode(array('error'=>array('message'=>$e->getMessage()))));
 					return;
@@ -244,7 +246,7 @@ class Flow{
 						,'error_redirect','error_status','error_template'
 						,'suffix','secure','mode'
 				)
-				,1=>array('modules','args','vars')
+				,1=>array('plugins','args','vars')
 		);
 		$root_keys = array(
 				0=>array('media_path'
@@ -252,7 +254,7 @@ class Flow{
 						,'error_redirect','error_status','error_template'
 						,'secure'
 				)
-				,1=>array('modules')
+				,1=>array('plugins')
 		);
 		$pathinfo = preg_replace("/(.*?)\?.*/","\\1",(isset($_SERVER['PATH_INFO']) ? $_SERVER['PATH_INFO'] : null));
 		if(is_string($map) && preg_match('/^[\w\.]+$/',$map)) $map = array('patterns'=>array(''=>array('action'=>$map)));

@@ -12,7 +12,7 @@ namespace phpman;
  */
 class Template{
 	use \phpman\StaticModule;
-	use \phpman\InstanceModule;
+	use \phpman\Connector;
 	
 	private $file;
 	private $selected_template;
@@ -164,25 +164,13 @@ class Template{
 		$src = preg_replace("/([\w])\->/","\\1__PHP_ARROW__",$src);
 		$src = str_replace(array("\\\\","\\\"","\\'"),array('__ESC_DESC__','__ESC_DQ__','__ESC_SQ__'),$src);
 		$src = $this->replace_xtag($src);
-		/**
-		 * テンプレート作成の初期化
-		 * @param phpman.String $obj
-		 */
-		$this->object_module('init_template',\phpman\String::ref($obj,$src));
-		$src = $this->rtcomment($this->rtblock($this->rttemplate((string)$obj),$this->file));
+		foreach($this->load_instance_plugins('init_template') as $o) $src = $o->init_template($o);
+		$src = $this->rtcomment($this->rtblock($this->rttemplate($src),$this->file));
 		$this->selected_src = $src;
-		/**
-		 * テンプレート作成の前処理
-		 * @param phpman.String $obj
-		 */
-		$this->object_module('before_template',\phpman\String::ref($obj,$src));
-		$src = $this->rtif($this->rtloop($this->html_form($this->html_list((string)$obj))));
-		/**
-		 * テンプレート作成の後処理
-		 * @param phpman.String $obj
-		 */
-		$this->object_module('after_template',\phpman\String::ref($obj,$src));
-		$src = str_replace('__PHP_ARROW__','->',(string)$obj);
+		foreach($this->load_instance_plugins('before_template') as $o) $src = $o->before_template($src);
+		$src = $this->rtif($this->rtloop($this->html_form($this->html_list($src))));
+		foreach($this->load_instance_plugins('after_template') as $o) $src = $o->after_template($src);
+		$src = str_replace('__PHP_ARROW__','->',$src);
 		$src = $this->parse_print_variable($src);
 		$php = array(' ?>','<?php ','->');
 		$str = array('__PHP_TAG_END__','__PHP_TAG_START__','__PHP_ARROW__');
@@ -217,11 +205,7 @@ class Template{
 		*/
 	}
 	private function exec($_src_){
-		/**
-		 * 実行前処理
-		 * @param phpman.String $obj
-		 */
-		$this->object_module('before_exec_template',\phpman\String::ref($_obj_,$_src_));
+		foreach($this->load_instance_plugins('before_exec_template') as $o) $_src_ = $o->before_exec_template($_src_);
 		ob_start();
 			$_htmlenc_ = function($v){
 				if(!empty($v) && is_string($v)){
@@ -231,7 +215,7 @@ class Template{
 				return $v;
 			};
 			if(is_array($this->vars) && !empty($this->vars)) extract($this->vars);
-			eval('?><?php $_display_exception_='.((\phpman\Conf::get('display_exception') === true) ? 'true' : 'false').'; ?>'.((string)$_obj_));
+			eval('?><?php $_display_exception_='.((\phpman\Conf::get('display_exception') === true) ? 'true' : 'false').'; ?>'.$_src_);
 		$_eval_src_ = ob_get_clean();
 
 		if(strpos($_eval_src_,'Parse error: ') !== false){
@@ -247,12 +231,8 @@ class Template{
 			}
 		}
 		$_src_ = $this->selected_src = null;
-		/**
-		 * 実行後処理
-		 * @param phpman.String $obj
-		 */
-		$this->object_module('after_exec_template',\phpman\String::ref($_obj_,$_eval_src_));
-		return (string)$_obj_;
+		foreach($this->load_instance_plugins('after_exec_template') as $o) $_eval_src_ = $o->after_exec_template($_eval_src_);
+		return $_eval_src_;
 	}
 	private function error_handler($errno,$errstr,$errfile,$errline){
 		throw new \ErrorException($errstr,0,$errno,$errfile,$errline);
@@ -323,12 +303,7 @@ class Template{
 				$src = $this->rttemplate($this->replace_xtag($this->read_src($filename = $href)));
 				$this->selected_template = $e->in_attr('name');
 			}
-			/**
-			 * ブロック展開の前処理
-			 * @param phpman.String $obj
-			 */
-			$this->object_module('before_block_template',\phpman\String::ref($obj,$src));
-			$src = (string)$obj;
+			foreach($this->load_instance_plugins('before_block_template') as $o) $src = $o->before_block_template($src);
 			if(empty($blocks)){
 				if(\phpman\Xml::set($bx,'<:>'.$src.'</:>')){
 					foreach($bx->in('rt:block') as $b) $src = str_replace($b->plain(),$b->value(),$src);
@@ -709,7 +684,7 @@ class Template{
 		*/
 		/***
 			# fill_middle
-			$template = new self();
+			$t = new self();
 			$src = pre('<rt:loop param="abc" var="a" limit="4" offset="4"><rt:fill>hoge<rt:else />{$a}</rt:fill><rt:middle>M</rt:middle></rt:loop>');
 			$result = pre('45MhogeMhoge');
 			$t->vars("abc",array(1,2,3,4,5));
