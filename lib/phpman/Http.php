@@ -6,7 +6,8 @@ class Http{
 	private $agent;
 	private $timeout = 30;
 	private $redirect_max = 20;
-	
+	private $redirect_count = 1;
+
 	private $request_header = array();
 	private $request_vars = array();
 	private $request_file_vars = array();
@@ -15,7 +16,7 @@ class Http{
 	private $cookie = array();
 	private $url;
 	private $status;
-	
+
 	public function __construct($agent=null,$timeout=30,$redirect_max=20){
 		$this->agent = $agent;
 		$this->timeout = (int)$timeout;
@@ -38,6 +39,7 @@ class Http{
 		$this->request_header[$key] = $value;
 	}
 	public function vars($key,$value=null){
+		if(is_bool($value)) $value = ($value) ? 'true' : 'false'; 
 		$this->request_vars[$key] = $value;
 		if(isset($this->request_file_vars[$key])) unset($this->request_file_vars[$key]);
 	}
@@ -91,27 +93,6 @@ class Http{
 			}
 			list($url) = explode('?',$url,2);
 		}
-		if(!isset($this->request_header['Expect'])){
-			$this->request_header['Expect'] = null;
-		}
-		if(!isset($this->request_header['Cookie'])){
-			$cookies = '';
-			foreach($this->cookie as $domain => $cookie_value){
-				if(strpos($cookie_base_domain,$domain) === 0 || strpos($cookie_base_domain,(($domain[0] == '.') ? $domain : '.'.$domain)) !== false){
-					foreach($cookie_value as $k => $v){
-						if(!$v['secure'] || ($v['secure'] && substr($url,0,8) == 'https://')) $cookies .= sprintf('%s=%s; ',$k,$v['value']);
-					}
-				}
-			}
-			curl_setopt($this->resource,CURLOPT_COOKIE,$cookies);
-		}
-		if($this->redirect_max > 1){
-			curl_setopt($this->resource,CURLOPT_FOLLOWLOCATION,true);
-			curl_setopt($this->resource,CURLOPT_AUTOREFERER,true);
-			curl_setopt($this->resource,CURLOPT_MAXREDIRS,$this->redirect_max);
-		}else{
-			curl_setopt($this->resource,CURLOPT_FOLLOWLOCATION,false);
-		}
 		switch($method){
 			case 'POST': curl_setopt($this->resource,CURLOPT_POST,true); break;
 			case 'GET': curl_setopt($this->resource,CURLOPT_HTTPGET,true); break;
@@ -143,24 +124,52 @@ class Http{
 				$url = $url.(!empty($this->request_vars) ? '?'.http_build_query($this->request_vars) : '');
 		}
 		curl_setopt($this->resource,CURLOPT_URL,$url);
+		curl_setopt($this->resource,CURLOPT_FOLLOWLOCATION,false);
 		curl_setopt($this->resource,CURLOPT_HEADER,false);
 		curl_setopt($this->resource,CURLOPT_RETURNTRANSFER,false);
 		curl_setopt($this->resource,CURLOPT_FORBID_REUSE,true);
 		curl_setopt($this->resource,CURLOPT_FAILONERROR,false);
 		curl_setopt($this->resource,CURLOPT_TIMEOUT,$this->timeout);
-		curl_setopt($this->resource,CURLOPT_HTTPHEADER,
-				array_map(function($k,$v){
-			return $k.': '.$v;
+		
+		if(!isset($this->request_header['Expect'])){
+			$this->request_header['Expect'] = null;
 		}
-		,array_keys($this->request_header)
-		,$this->request_header
-		)
-		);
-		curl_setopt($this->resource,CURLOPT_USERAGENT,
-				(empty($this->agent) ?
-						(isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : null) :
-						$this->agent
-				)
+		if(!isset($this->request_header['Cookie'])){
+			$cookies = '';
+			foreach($this->cookie as $domain => $cookie_value){
+				if(strpos($cookie_base_domain,$domain) === 0 || strpos($cookie_base_domain,(($domain[0] == '.') ? $domain : '.'.$domain)) !== false){
+					foreach($cookie_value as $k => $v){
+						if(!$v['secure'] || ($v['secure'] && substr($url,0,8) == 'https://')) $cookies .= sprintf('%s=%s; ',$k,$v['value']);
+					}
+				}
+			}
+			curl_setopt($this->resource,CURLOPT_COOKIE,$cookies);
+		}
+		if(!isset($this->request_header['User-Agent'])){
+			curl_setopt($this->resource,CURLOPT_USERAGENT,
+					(empty($this->agent) ?
+							(isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : null) :
+							$this->agent
+					)
+			);
+		}
+		if(!isset($this->request_header['Accept']) && isset($_SERVER['HTTP_ACCEPT'])){
+			$this->request_header['Accept'] = $_SERVER['HTTP_ACCEPT'];
+		}
+		if(!isset($this->request_header['Accept-Language']) && isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])){
+			$this->request_header['Accept-Language'] = $_SERVER['HTTP_ACCEPT_LANGUAGE'];
+		}
+		if(!isset($this->request_header['Accept-Charset']) && isset($_SERVER['HTTP_ACCEPT_CHARSET'])){
+			$this->request_header['Accept-Charset'] = $_SERVER['HTTP_ACCEPT_CHARSET'];
+		}
+		
+		curl_setopt($this->resource,CURLOPT_HTTPHEADER,
+			array_map(function($k,$v){
+					return $k.': '.$v;
+				}
+				,array_keys($this->request_header)
+				,$this->request_header
+			)
 		);
 		curl_setopt($this->resource,CURLOPT_HEADERFUNCTION,function($c,$data){
 			$this->head .= $data;
@@ -174,26 +183,25 @@ class Http{
 		}else{
 			if(!is_dir(dirname($download_path))) mkdir(dirname($download_path),0777,true);
 			$fp = fopen($download_path,'wb');
+				
 			curl_setopt($this->resource,CURLOPT_WRITEFUNCTION,function($c,$data) use(&$fp){
-				fwrite($fp,$data);
+				if($fp) fwrite($fp,$data);
 				return strlen($data);
 			});
 		}
 		$this->request_header = $this->request_vars = array();
 		$this->head = $this->body = '';
 		curl_exec($this->resource);
-	
+		if(!empty($download_path) && $fp){
+			fclose($fp);
+		}
+
 		$this->url = curl_getinfo($this->resource,CURLINFO_EFFECTIVE_URL);
 		$this->status = curl_getinfo($this->resource,CURLINFO_HTTP_CODE);
-	
+
 		if($err_code = curl_errno($this->resource) > 0){
 			if($err_code == 47) return $this;
 			throw new \RuntimeException($err_code.': '.curl_error($this->resource));
-		}
-		if(!empty($download_path)){
-			curl_close($this->resource);
-			fclose($fp);
-			$this->resource = curl_init();
 		}
 		if(preg_match_all('/Set-Cookie:[\s]*(.+)/i',$this->head,$match)){
 			$unsetcookie = $setcookie = array();
@@ -202,7 +210,7 @@ class Http{
 				$cookie_domain = $cookie_base_domain;
 				$cookie_path = '/';
 				$secure = false;
-	
+		
 				foreach(explode(';',$cookies) as $cookie){
 					$cookie = trim($cookie);
 					if(strpos($cookie,'=') !== false){
@@ -229,6 +237,19 @@ class Http{
 				}
 			}
 		}
+		if($this->redirect_count++ < $this->redirect_max){
+			switch($this->status){
+				case 300:
+				case 301:
+				case 302:
+				case 303:
+				case 307:
+					if(preg_match('/Location:[\040](.*)/i',$this->head,$redirect_url)){
+						return $this->request('GET',\phpman\Util::path_absolute($url,$redirect_url[1]),$download_path);
+					}
+			}
+		}
+		$this->redirect_count = 1;
 		return $this;
 	}
 	public function __destruct(){
