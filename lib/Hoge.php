@@ -1,8 +1,8 @@
 <?php
 class Hoge extends \phpman\Object{
-	use \phpman\StaticModule;
+	use \phpman\Plugin;
 	
 	public function abc(){
-		static::set_module('hoge');
+		static::plugin('hoge');
 	}
 }

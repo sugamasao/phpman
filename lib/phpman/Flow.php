@@ -2,7 +2,7 @@
 namespace phpman;
 
 class Flow{
-	use \phpman\Connector;
+	use \phpman\Plugin;
 	private $branch_url;
 	private $app_url;
 	private $media_url;
@@ -151,7 +151,7 @@ class Flow{
 					if(!empty($pattern['action'])){
 						list($class,$method) = explode('::',$pattern['action']);
 						$ins = $this->str_reflection($class);
-						if($ins instanceof \phpman\Connector){
+						if($ins instanceof \phpman\Plugin){
 							foreach(array($map['plugins'],$pattern['plugins']) as $plugins){
 								foreach($plugins as $m){
 									$ins->instance_plugin($this->str_reflection($m));

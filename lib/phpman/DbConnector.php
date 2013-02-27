@@ -1,7 +1,7 @@
 <?php
 namespace phpman;
 
-class DbConnect{
+class DbConnector{
 	protected $encode;
 	protected $quotation = '`';
 	protected $order_random_str = 'random()';

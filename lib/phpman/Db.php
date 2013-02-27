@@ -18,7 +18,7 @@ class Db implements \Iterator{
 	private $statement;
 	private $resultset;
 	private $resultset_counter;
-	private $connection_module;
+	private $connector;
 	
 	/**
 	 * コンストラクタ
@@ -29,18 +29,18 @@ class Db implements \Iterator{
 			if(isset($def[$k])) $this->{$k} = $def[$k];
 		}
 		if(empty($this->type)){
-			$this->type = \phpman\DbConnect::type();
+			$this->type = \phpman\DbConnector::type();
 			if(empty($this->host)) $this->host = ':memory:';
 		}
 		if(empty($this->encode)) $this->encode = 'utf8';
 		$this->type = str_replace('.','\\',$this->type);
 		if($this->type[0] !== '\\') $this->type = '\\'.$this->type;		
 		
-		if(empty($this->type) || !class_exists($this->type)) throw new \RuntimeException('could not find module `'.((substr($s=str_replace("\\",'.',$this->type),0,1) == '.') ? substr($s,1) : $s).'`');
+		if(empty($this->type) || !class_exists($this->type)) throw new \RuntimeException('could not find connector `'.((substr($s=str_replace("\\",'.',$this->type),0,1) == '.') ? substr($s,1) : $s).'`');
 		$r = new \ReflectionClass($this->type);
-		$this->connection_module = $r->newInstanceArgs(array($this->encode));		
-		if($this->connection_module instanceof \phpman\DbConnect){
-			$this->connection = $this->connection_module->connect($this->dbname,$this->host,$this->port,$this->user,$this->password,$this->sock);
+		$this->connector = $r->newInstanceArgs(array($this->encode));		
+		if($this->connector instanceof \phpman\DbConnector){
+			$this->connection = $this->connector->connect($this->dbname,$this->host,$this->port,$this->user,$this->password,$this->sock);
 		}
 		if(empty($this->connection)) throw new \RuntimeException('connection fail '.$this->dbname);
 		$this->connection->beginTransaction();
@@ -48,8 +48,8 @@ class Db implements \Iterator{
 	/**
 	 * 接続モジュール
 	 */
-	public function connection_module(){
-		return $this->connection_module;
+	public function connector(){
+		return $this->connector;
 	}
 	public function __destruct(){
 		if($this->connection !== null){

@@ -12,7 +12,7 @@ namespace phpman;
  * @conf string $level ログレベル (none,error,warn,info,debug)
  */
 class Log{
-	use \phpman\StaticModule;
+	use \phpman\Plugin;
 	
 	static private $level_strs = array('none','error','warn','info','debug');
 	static private $logs = array();
@@ -117,32 +117,32 @@ class Log{
 						 * @param self $log
 						 * @param string $id
 						 */
-						case 'debug': self::module('debug',$log,self::$id); break;
+						case 'debug': static::call_plugins('debug',$log,self::$id); break;
 						/**
 						 * infoログの場合の処理
 						 * @param self $log
 						 * @param string $id
 						 */
-						case 'info': self::module('info',$log,self::$id); break;
+						case 'info': static::call_plugins('info',$log,self::$id); break;
 						/**
 						 * warnログの場合の処理
 						 * @param self $log
 						 * @param string $id
 						 */
-						case 'warn': self::module('warn',$log,self::$id); break;
+						case 'warn': static::call_plugins('warn',$log,self::$id); break;
 						/**
 						 * errorログの場合の処理
 						 * @param self $log
 						 * @param string $id
 						 */
-						case 'error': self::module('error',$log,self::$id); break;
+						case 'error': static::call_plugins('error',$log,self::$id); break;
 						default:
 						/**
 						 * traceログの場合の処理
 						 * @param self $log
 						 * @param string $id
 						 */
-						self::module('trace',$log,self::$id);
+						static::call_plugins('trace',$log,self::$id);
 					}
 				}
 			}
@@ -152,12 +152,12 @@ class Log{
 		 * @param self[] $logs
 		 * @param string $id
 		 */
-		self::module('flush',self::$logs,self::$id);
+		static::call_plugins('flush',self::$logs,self::$id);
 		/**
 		 * フラッシュの後処理
 		 * @param string $id
 		 */
-		self::module('after_flush',self::$id);
+		static::call_plugins('after_flush',self::$id);
 		self::$logs = array();
 	}
 	/**

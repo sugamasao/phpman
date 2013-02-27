@@ -7,7 +7,7 @@ namespace phpman;
  * @conf mixed{} $connection 接続設定
  */
 abstract class Dao extends \phpman\Object{
-	use \phpman\StaticModule;
+	use \phpman\Plugin;
 	
 	static private $_dao_ = array();
 	static private $_cnt_ = 0;	
@@ -116,7 +116,7 @@ abstract class Dao extends \phpman\Object{
 			}
 			$config = self::get_con($anon[0],$p);
 			if(!isset(self::$_connections_[$anon[0]])) throw new \RuntimeException('connection fail '.str_replace("\\",'.',get_class($this)));
-			static::set_module(self::$_connections_[$anon[0]]->connection_module());
+			static::plugin(self::$_connections_[$anon[0]]->connector());
 			$anon[5] = isset($config['prefix']) ? $config['prefix'] : '';
 			$anon[6] = (isset($config['upper']) && $config['upper'] === true);
 			$anon[7] = (isset($config['lower']) && $config['lower'] === true);
@@ -480,7 +480,7 @@ abstract class Dao extends \phpman\Object{
 		}
 		$query = new \phpman\Q();
 		if(!empty($args)) call_user_func_array(array($query,'add'),$args);
-		$daq = static::module($exe.'_sql',$this,$target_name,$gorup_name,$query);
+		$daq = static::call_plugins($exe.'_sql',$this,$target_name,$gorup_name,$query);
 		return $this->func_query($daq,$is_list);
 	}
 	final static private function exec_aggregator($exec,$target_name,$args,$format=true){
@@ -659,7 +659,7 @@ abstract class Dao extends \phpman\Object{
 		 * @param string $name
 		 * @return Daq
 		 */
-		return static::module('select_sql',$dao,$query,$paginator,$name);
+		return static::call_plugins('select_sql',$dao,$query,$paginator,$name);
 	}
 	final static private function get_statement_iterator($dao,$query){
 		if(!$query->is_order_by()){
@@ -673,7 +673,7 @@ abstract class Dao extends \phpman\Object{
 		 * @param string $name
 		 * @return Daq
 		 */
-		$daq = static::module('select_sql',$dao,$query,$query->paginator());
+		$daq = static::call_plugins('select_sql',$dao,$query,$query->paginator());
 		$statement = $dao->query($daq);
 		$errors = $statement->errorInfo();
 		if(isset($errors[1])){
@@ -737,7 +737,7 @@ abstract class Dao extends \phpman\Object{
 		 * delete文の生成
 		 * @param self $this
 		 */
-		$daq = static::module('find_delete_sql',$dao,$query);
+		$daq = static::call_plugins('find_delete_sql',$dao,$query);
 		return $dao->update_query($daq);
 	}
 	/**
@@ -751,7 +751,7 @@ abstract class Dao extends \phpman\Object{
 		 * delete文の生成
 		 * @param self $this
 		 */
-		$daq = static::module('delete_sql',$this);
+		$daq = static::call_plugins('delete_sql',$this);
 		if($this->update_query($daq) == 0) throw new \phpman\NotfoundException('delete failed');
 		$this->__after_delete__();
 	}
@@ -843,7 +843,7 @@ abstract class Dao extends \phpman\Object{
 			 * @param self $this
 			 * @return Daq
 			 */
-			$daq = $self::module('create_sql',$this);
+			$daq = $self::call_plugins('create_sql',$this);
 			if($this->update_query($daq) == 0) throw new \phpman\RuntimeException('create failed');
 			if($daq->is_id()){
 				/**
@@ -851,7 +851,7 @@ abstract class Dao extends \phpman\Object{
 				 * @param self $this
 				 * @return integer
 				 */
-				$result = $this->func_query(static::module('last_insert_id_sql',$this));
+				$result = $this->func_query(static::call_plugins('last_insert_id_sql',$this));
 				if(empty($result)) throw new \phpman\RuntimeException('create failed');
 				$this->{$daq->id()}($result[0]);
 			}
@@ -872,7 +872,7 @@ abstract class Dao extends \phpman\Object{
 			 * @param self $this
 			 * @return Daq
 			 */
-			$daq = $self::module('update_sql',$this,$query);
+			$daq = $self::call_plugins('update_sql',$this,$query);
 			$affected_rows = $this->update_query($daq);
 			if($affected_rows === 0 && !empty($args)) throw new \phpman\NoRowsAffectedException();
 			$this->__after_update__();
@@ -941,10 +941,10 @@ abstract class Dao extends \phpman\Object{
 	 */
 	final static public function create_table(){
 		$dao = new static();
-		$daq = new \phpman\Daq(static::module('exists_table_sql',$dao));
+		$daq = new \phpman\Daq(static::call_plugins('exists_table_sql',$dao));
 		$count = current($dao->func_query($daq));
 		if($count == 0){
-			$daq = new \phpman\Daq(static::module('create_table_sql',$dao));
+			$daq = new \phpman\Daq(static::call_plugins('create_table_sql',$dao));
 			$dao->func_query($daq);
 		}
 	}	

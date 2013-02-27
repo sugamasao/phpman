@@ -4,7 +4,7 @@ namespace robin\db;
  * Mysqlモジュール
  * @author tokushima
  */
-class DbConnectMysql extends \phpman\DbConnect{
+class MysqlConnector extends \phpman\DbConnector{
 	protected $order_random_str = 'rand()';
 	
 	/**

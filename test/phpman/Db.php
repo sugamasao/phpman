@@ -2,7 +2,7 @@
 $start = microtime(true);
 $max = 1000;
 
-$db = new \phpman\Db(array('type'=>'phpman.DbConnect','host'=>':memory:','encode'=>'utf8'));
+$db = new \phpman\Db(array('type'=>'phpman.DbConnector','host'=>':memory:','encode'=>'utf8'));
 
 $table_name = 'test_'.uniqid();
 $db->query(sprintf('create table `%s`(id INTEGER PRIMARY KEY AUTOINCREMENT,value TEXT)',$table_name));
