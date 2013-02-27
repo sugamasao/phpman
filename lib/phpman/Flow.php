@@ -154,7 +154,7 @@ class Flow{
 						if($ins instanceof \phpman\Plugin){
 							foreach(array($map['plugins'],$pattern['plugins']) as $plugins){
 								foreach($plugins as $m){
-									$ins->instance_plugin($this->str_reflection($m));
+									$ins->set_object_plugin($this->str_reflection($m));
 								}
 							}
 						}

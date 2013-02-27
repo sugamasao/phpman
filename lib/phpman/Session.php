@@ -26,7 +26,7 @@ class Session{
 			session_cache_expire((int)(\phpman\Conf::get('session_expire',10800)/60));
 			session_name();
 
-			if(static::has_plugin('session_read')){
+			if(static::has_class_plugin('session_read')){
 				ini_set('session.save_handler','user');
 				session_set_save_handler(
 					array($this,'open'),
@@ -40,7 +40,7 @@ class Session{
 				 * セッションの有効性を検証します、falseを返した場合にsession_regenerate_id()が呼ばれます
 				 * @return boolean
 				 */
-				if(isset($this->vars[$session_name]) && (!static::has_plugin('session_verify') || static::call_plugins('session_verify') !== true)) session_regenerate_id(true);
+				if(isset($this->vars[$session_name]) && (!static::has_class_plugin('session_verify') || static::call_class_plugin_funcs('session_verify') !== true)) session_regenerate_id(true);
 			}
 			session_start();
 		}
@@ -52,14 +52,14 @@ class Session{
 		 * @param string $name
 		 * @return boolean
 		 */
-		return static::call_plugins('session_open',$path,$name);
+		return static::call_class_plugin_funcs('session_open',$path,$name);
 	}
 	final public function close(){
 		/**
 		 * writeが実行された後で実行される
 		 * @return boolean
 		 */
-		return static::call_plugins('session_close');
+		return static::call_class_plugin_funcs('session_close');
 	}
 	final public function read($id){
 		/**
@@ -67,7 +67,7 @@ class Session{
 		 * @param string $id
 		 * @return mixed
 		 */
-		return static::call_plugins('session_read',$id);
+		return static::call_class_plugin_funcs('session_read',$id);
 	}
 	final public function write($id,$sess_data){
 		/**
@@ -76,7 +76,7 @@ class Session{
 		 * @param mixed $sess_data
 		 * @return boolean
 		 */
-		return static::call_plugins('session_write',$id,$sess_data);
+		return static::call_class_plugin_funcs('session_write',$id,$sess_data);
 	}
 	final public function destroy($id){
 		/**
@@ -84,7 +84,7 @@ class Session{
 		 * @param string $id
 		 * @return boolean
 		 */
-		return static::call_plugins('session_destroy',$id);
+		return static::call_class_plugin_funcs('session_destroy',$id);
 	}
 	final public function gc($maxlifetime){
 		/**
@@ -92,7 +92,7 @@ class Session{
 		 * @param integer $maxlifetime
 		 * @return boolean
 		 */
-		return static::call_plugins('session_gc',$maxlifetime);
+		return static::call_class_plugin_funcs('session_gc',$maxlifetime);
 	}
 	/**
 	 * セッションの設定

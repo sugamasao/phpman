@@ -95,7 +95,7 @@ class Template{
 		 * @param string $cname キャッシュ名
 		 * @return boolean
 		 */
-		if(!static::has_plugin('has_template_cache') || static::call_plugins('has_template_cache',$cname) !== true){
+		if(static::call_class_plugin_funcs('has_template_cache',$cname) !== true){
 			if(!empty($this->put_block)){
 				$src = $this->read_src($this->put_block);
 				if(strpos($src,'rt:extends') !== false){
@@ -113,14 +113,14 @@ class Template{
 			 * @param string $cname キャッシュ名
 			 * @param string $src 作成されたテンプレート
 			 */
-			static::call_plugins('set_template_cache',$cname,$src);
+			static::call_class_plugin_funcs('set_template_cache',$cname,$src);
 		}else{
 			/**
 			 * キャッシュから取得する
 			 * @param string $cname キャッシュ名
 			 * @return string
 			 */
-			$src = static::call_plugins('get_template_cache',$cname);
+			$src = static::call_class_plugin_funcs('get_template_cache',$cname);
 		}
 		return $this->execute($src);
 		/***
@@ -163,12 +163,12 @@ class Template{
 		$src = preg_replace("/([\w])\->/","\\1__PHP_ARROW__",$src);
 		$src = str_replace(array("\\\\","\\\"","\\'"),array('__ESC_DESC__','__ESC_DQ__','__ESC_SQ__'),$src);
 		$src = $this->replace_xtag($src);
-		foreach($this->instance_plugins('init_template') as $o) $src = $o->init_template($o);
+		foreach($this->get_object_plugin_funcs('init_template') as $o) $src = static::call_func($o,$src);
 		$src = $this->rtcomment($this->rtblock($this->rttemplate($src),$this->file));
 		$this->selected_src = $src;
-		foreach($this->instance_plugins('before_template') as $o) $src = $o->before_template($src);
+		foreach($this->get_object_plugin_funcs('before_template') as $o) $src = static::call_func($o,$src);
 		$src = $this->rtif($this->rtloop($this->html_form($this->html_list($src))));
-		foreach($this->instance_plugins('after_template') as $o) $src = $o->after_template($src);
+		foreach($this->get_object_plugin_funcs('after_template') as $o) $src = static::call_func($o,$src);
 		$src = str_replace('__PHP_ARROW__','->',$src);
 		$src = $this->parse_print_variable($src);
 		$php = array(' ?>','<?php ','->');
@@ -204,7 +204,7 @@ class Template{
 		*/
 	}
 	private function exec($_src_){
-		foreach($this->instance_plugins('before_exec_template') as $o) $_src_ = $o->before_exec_template($_src_);
+		foreach($this->get_object_plugin_funcs('before_exec_template') as $o) $_src_ = static::call_func($o,$_src_);
 		ob_start();
 			$_htmlenc_ = function($v){
 				if(!empty($v) && is_string($v)){
@@ -230,7 +230,7 @@ class Template{
 			}
 		}
 		$_src_ = $this->selected_src = null;
-		foreach($this->instance_plugins('after_exec_template') as $o) $_eval_src_ = $o->after_exec_template($_eval_src_);
+		foreach($this->get_object_plugin_funcs('after_exec_template') as $o) $_eval_src_ = static::call_func($o,$_eval_src_);
 		return $_eval_src_;
 	}
 	private function error_handler($errno,$errstr,$errfile,$errline){
@@ -302,7 +302,7 @@ class Template{
 				$src = $this->rttemplate($this->replace_xtag($this->read_src($filename = $href)));
 				$this->selected_template = $e->in_attr('name');
 			}
-			foreach($this->instance_plugins('before_block_template') as $o) $src = $o->before_block_template($src);
+			foreach($this->get_object_plugin_funcs('before_block_template') as $o) $src = static::call_func($o,$src);
 			if(empty($blocks)){
 				if(\phpman\Xml::set($bx,'<:>'.$src.'</:>')){
 					foreach($bx->in('rt:block') as $b) $src = str_replace($b->plain(),$b->value(),$src);
