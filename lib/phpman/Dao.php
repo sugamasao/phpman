@@ -156,18 +156,23 @@ abstract class Dao extends \phpman\Object{
 						if(!empty($conds_string)){
 							foreach(explode(',',$conds_string) as $key => $cond){
 								$tcc = explode('.',$cond,3);
-								if(sizeof($tcc) < 2) throw new \LogicException('annotation error : `'.$name.'`');
-								if(sizeof($tcc) === 3){
-									list($t,$c1,$c2) = $tcc;
-									$ref_table = self::set_table_name($t,$p);
-									$ref_table_alias = 't'.self::$_cnt_++;
-									$conds[] = Column::cond_instance($c1,'c'.self::$_cnt_++,$ref_table,$ref_table_alias);
-									$conds[] = Column::cond_instance($c2,'c'.self::$_cnt_++,$ref_table,$ref_table_alias);
-								}else{
-									list($t,$c1) = $tcc;
-									$ref_table = self::set_table_name($t,$p);
-									$ref_table_alias = 't'.self::$_cnt_++;
-									$conds[] = Column::cond_instance($c1,'c'.self::$_cnt_++,$ref_table,$ref_table_alias);
+								switch(sizeof($tcc)){
+									case 1:
+										$conds[] = \phpman\Column::cond_instance($tcc[0],'c'.self::$_cnt_++,$this->table(),$root_table_alias);
+										break;
+									case 2:
+										list($t,$c1) = $tcc;
+										$ref_table = self::set_table_name($t,$p);
+										$ref_table_alias = 't'.self::$_cnt_++;
+										$conds[] = \phpman\Column::cond_instance($c1,'c'.self::$_cnt_++,$ref_table,$ref_table_alias);
+										break;
+									case 3:
+										list($t,$c1,$c2) = $tcc;
+										$ref_table = self::set_table_name($t,$p);
+										$ref_table_alias = 't'.self::$_cnt_++;
+										$conds[] = \phpman\Column::cond_instance($c1,'c'.self::$_cnt_++,$ref_table,$ref_table_alias);
+										$conds[] = \phpman\Column::cond_instance($c2,'c'.self::$_cnt_++,$ref_table,$ref_table_alias);
+										break;
 								}
 							}
 						}
@@ -188,7 +193,7 @@ abstract class Dao extends \phpman\Object{
 									$this->prop_anon($name,'has',true,true);
 									foreach($dao->columns() as $column) $_alias_[$column->column_alias()] = $name;
 									$has_column = $dao->base_column($dao->columns(),$has_var);
-									$conds[] = Column::cond_instance($has_column->column(),'c'.self::$_cnt_++,$has_column->table(),$has_column->table_alias());
+									$conds[] = \phpman\Column::cond_instance($has_column->column(),'c'.self::$_cnt_++,$has_column->table(),$has_column->table_alias());
 								}else{
 									$_has_many_conds_[$name] = array($dao,$has_var,$self_var);
 									$self_db = false;
@@ -201,7 +206,7 @@ abstract class Dao extends \phpman\Object{
 								$_alias_[$column->column_alias()] = $name;
 							}
 							if($self_db){
-								array_unshift($conds,Column::cond_instance($self_var,'c'.self::$_cnt_++,$this->table(),$root_table_alias));
+								array_unshift($conds,\phpman\Column::cond_instance($self_var,'c'.self::$_cnt_++,$this->table(),$root_table_alias));
 								if(sizeof($conds) % 2 != 0) throw new \phpman\RuntimeException($name.'['.$column_type.'] is illegal condition');
 								if($this->prop_anon($name,'join',false)){
 									$this->prop_anon($name,'get',false,true);
