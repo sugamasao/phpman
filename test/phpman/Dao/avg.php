@@ -1,0 +1,37 @@
+<?php
+use \phpman\Q;
+\local\test\db\Calc::create_table();
+
+\local\test\db\Calc::find_delete();
+r(new \local\test\db\Calc())->float(1.5)->type('A')->save();
+r(new \local\test\db\Calc())->float(1.3)->type('A')->save();
+r(new \local\test\db\Calc())->float(1.1)->type('B')->save();
+
+
+eq(1.3,\local\test\db\Calc::find_avg('float'));
+eq(1.4,\local\test\db\Calc::find_avg('float',Q::eq('type','A')));
+
+
+eq(array('A'=>1.4,'B'=>1.1),\local\test\db\Calc::find_avg_by('float','type'));
+eq(array('A'=>1.4),\local\test\db\Calc::find_avg_by('float','type',Q::eq('type','A')));
+
+
+
+\local\test\db\Calc::find_delete();
+r(new \local\test\db\Calc())->price(1)->type('A')->save();
+r(new \local\test\db\Calc())->price(2)->type('A')->save();
+r(new \local\test\db\Calc())->price(3)->type('B')->save();
+
+
+eq(2,\local\test\db\Calc::find_avg('price'));
+eq(1.5,\local\test\db\Calc::find_avg('price',Q::eq('type','A')));
+
+
+eq(array('A'=>1.5,'B'=>3),\local\test\db\Calc::find_avg_by('price','type'));
+eq(array('A'=>1.5),\local\test\db\Calc::find_avg_by('price','type',Q::eq('type','A')));
+
+
+
+eq(0,\local\test\db\Calc::find_avg('type'));
+eq(0,\local\test\db\Calc::find_avg('type',Q::eq('type','A')));
+

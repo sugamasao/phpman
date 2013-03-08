@@ -41,6 +41,6 @@ eq(array('AAA','BBB'),$result);
 
 
 eq(array('A'=>2,'B'=>2),\local\test\db\Calc::find_count_by('id','type'));
-eq(array('BBB'=>1,'ccc'=>1,'AAA'=>2),\local\test\db\Calc::find_count_by('type','name'));
+eq(array('AAA'=>2,'BBB'=>1,'ccc'=>1),\local\test\db\Calc::find_count_by('type','name'));
 
 
