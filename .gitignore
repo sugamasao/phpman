@@ -4,3 +4,6 @@
 /report
 /work
 /.htaccess
+
+/vendor/
+/composer.phar
