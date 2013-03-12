@@ -102,20 +102,22 @@ class Http{
 		}
 		switch($method){
 			case 'POST':
-				$vars = array();
-				if(!empty($this->request_vars)){
-					foreach(explode('&',http_build_query($this->request_vars)) as $q){
-						$s = explode('=',$q,2);
-						$vars[urldecode($s[0])] = isset($s[1]) ? urldecode($s[1]) : null;
-					}
-				}
 				if(!empty($this->request_file_vars)){
+					$vars = array();
+					if(!empty($this->request_vars)){
+						foreach(explode('&',http_build_query($this->request_vars)) as $q){
+							$s = explode('=',$q,2);
+							$vars[urldecode($s[0])] = isset($s[1]) ? urldecode($s[1]) : null;
+						}
+					}
 					foreach(explode('&',http_build_query($this->request_file_vars)) as $q){
 						$s = explode('=',$q,2);
 						$vars[urldecode($s[0])] = isset($s[1]) ? '@'.urldecode($s[1]) : null;
 					}
+					curl_setopt($this->resource,CURLOPT_POSTFIELDS,$vars);
+				}else{
+					curl_setopt($this->resource,CURLOPT_POSTFIELDS,http_build_query($this->request_vars));
 				}
-				curl_setopt($this->resource,CURLOPT_POSTFIELDS,$vars);
 				break;
 			case 'GET':
 			case 'HEAD':

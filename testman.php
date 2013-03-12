@@ -2061,9 +2061,27 @@ namespace{
 	}
 	
 	
+	if(is_file($f=getcwd().'/bootstrap.php') || is_file($f=getcwd().'/vendor/autoload.php')){
+		ob_start();
+			include_once($f);
+		ob_end_clean();		
+	}
 	
+	spl_autoload_register(function($c){
+		$cp = str_replace('\\','/',(($c[0] == '\\') ? substr($c,1) : $c));
+		foreach(explode(PATH_SEPARATOR,get_include_path()) as $p){
+			if(!empty($p) && ($r = realpath($p)) !== false && $p !== '.'){
 	
-	// 
+				if(is_file($f=($r.'/'.$cp.'.php')) || is_file($f=($r.'/'.$cp.'/'.basename($cp).'.php'))){
+					require_once($f);
+					if(class_exists($c,false) || interface_exists($c,false)) return true;
+				}
+			}
+		}
+		return false;
+	}
+	,true,false);
+	
 	$argv = array_slice($_SERVER['argv'],1);
 	$value = (empty($argv)) ? null : array_shift($argv);
 	$params = array();
@@ -2080,6 +2098,24 @@ namespace{
 			$params[$k] = (isset($params[$k])) ? array_merge($params[$k],array($v)) : $v;
 		}
 	}
+	if(class_exists('Testman')){
+		$i = new \ReflectionMethod('Testman','urls');
+		if($i->isStatic()){
+			$urls = call_user_func(array('Testman','urls'));
+		}else{
+			$ref = new ReflectionClass('Testman');
+			$obj = $ref->newInstance();
+			$urls = call_user_func(array($obj,'urls'));
+		}
+	}
+	
+	$entry_dir = $test_dir = $lib_dir = $func_dir = null;
+	if(isset($params['entry_dir'])) $entry_dir = realpath($entry_dir);
+	if(isset($params['test_dir'])) $test_dir = realpath($test_dir);
+	if(isset($params['lib_dir'])) $lib_dir = realpath($lib_dir);
+	if(isset($params['func_dir'])) $func_dir = realpath($func_dir);
+	if(!isset($entry_dir)) $entry_dir = __DIR__;
+	
 	if(isset($params['report'])){
 		if(!extension_loaded('xdebug')) die('xdebug extension not loaded');
 		$db = $params['report'];
@@ -2101,40 +2137,7 @@ namespace{
 		if(!is_dir(dirname($db))) mkdir(dirname($db),0777,true);
 		\testman\Coverage::start($db,$entry_path,$lib_path);
 	}
-	
-	// TODO
-	spl_autoload_register(function($c){
-		$cp = str_replace('\\','/',(($c[0] == '\\') ? substr($c,1) : $c));
-		foreach(explode(PATH_SEPARATOR,get_include_path()) as $p){
-			if(!empty($p) && ($r = realpath($p)) !== false && $p !== '.'){
-	
-				if(is_file($f=($r.'/'.$cp.'.php')) || is_file($f=($r.'/'.$cp.'/'.basename($cp).'.php'))){
-					require_once($f);
-					if(class_exists($c,false) || interface_exists($c,false)) return true;
-				}
-			}
-		}
-		return false;
-	}			
-	,true,false);
-	
-	// TODO
-	$path = __DIR__;
-	include_once('bootstrap.php');
-	if(class_exists('Testman')){
-		$i = new \ReflectionMethod('Testman','urls');
-		if($i->isStatic()){
-			$urls = call_user_func(array('Testman','urls'));
-		}else{
-			$ref = new ReflectionClass('Testman');
-			$obj = $ref->newInstance();
-			$urls = call_user_func(array($obj,'urls'));
-		}
-	}
-
-	
-	
-	\testman\TestRunner::init($path);
+	\testman\TestRunner::init($entry_dir,$test_dir,$lib_dir,$func_dir);
 	\testman\TestRunner::set_urls($urls);
 	\testman\TestRunner::info();
 	\testman\TestRunner::run_all(true);
