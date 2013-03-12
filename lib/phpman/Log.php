@@ -107,7 +107,7 @@ class Log{
 	/**
 	 * 格納されたログを出力する
 	 */
-	final static public function flush(){
+	static public function flush(){
 		if(!empty(self::$logs)){
 			foreach(self::$logs as $log){
 				if(self::cur_level() >= $log->level()){

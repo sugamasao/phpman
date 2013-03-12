@@ -45,7 +45,7 @@ class Session{
 			session_start();
 		}
 	}
-	final public function open($path,$name){
+	public function open($path,$name){
 		/**
 		 * セッションを開くときに実行される
 		 * @param string $path
@@ -54,14 +54,14 @@ class Session{
 		 */
 		return static::call_class_plugin_funcs('session_open',$path,$name);
 	}
-	final public function close(){
+	public function close(){
 		/**
 		 * writeが実行された後で実行される
 		 * @return boolean
 		 */
 		return static::call_class_plugin_funcs('session_close');
 	}
-	final public function read($id){
+	public function read($id){
 		/**
 		 * セッションが開始したとき実行されます
 		 * @param string $id
@@ -69,7 +69,7 @@ class Session{
 		 */
 		return static::call_class_plugin_funcs('session_read',$id);
 	}
-	final public function write($id,$sess_data){
+	public function write($id,$sess_data){
 		/**
 		 * セッションの保存や終了が必要となったときに実行されます
 		 * @param string $id
@@ -78,7 +78,7 @@ class Session{
 		 */
 		return static::call_class_plugin_funcs('session_write',$id,$sess_data);
 	}
-	final public function destroy($id){
+	public function destroy($id){
 		/**
 		 * セッションを破棄した場合に実行される
 		 * @param string $id
@@ -86,7 +86,7 @@ class Session{
 		 */
 		return static::call_class_plugin_funcs('session_destroy',$id);
 	}
-	final public function gc($maxlifetime){
+	public function gc($maxlifetime){
 		/**
 		 * ガベージコレクタ
 		 * @param integer $maxlifetime

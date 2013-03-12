@@ -23,14 +23,14 @@ abstract class Dao extends \phpman\Object{
 	 * コネクション一覧
 	 * @return Db[]
 	 */
-	final static public function connections(){
+	static public function connections(){
 		$connections = array();
 		foreach(self::$_connections_ as $n => $con){
 			$connections[$n] = $con;
 		}
 		return $connections;
 	}
-	final static private function connection($class){
+	static private function connection($class){
 		if(!isset(self::$_connections_[self::$_co_anon_[$class][0]])){
 			throw new \phpman\RuntimeException('unable to connect to '.$class);
 		}
@@ -39,16 +39,16 @@ abstract class Dao extends \phpman\Object{
 	/**
 	 * すべての接続でロールバックする
 	 */
-	final static public function rollback_all(){
+	static public function rollback_all(){
 		foreach(self::connections() as $con) $con->rollback();
 	}
 	/**
 	 * すべての接続でコミットする
 	 */
-	final static public function commit_all(){
+	static public function commit_all(){
 		foreach(self::connections() as $con) $con->commit();
 	}
-	final static private function get_con($database,$class){
+	static private function get_con($database,$class){
 		$def = \phpman\Conf::get('connection');
 		if(!isset(self::$_connections_[$database])){
 			try{
@@ -66,7 +66,7 @@ abstract class Dao extends \phpman\Object{
 		}
 		return $def[$database];
 	}
-	final protected function __new__(){
+	protected function __new__(){
 		if(func_num_args() == 1){
 			foreach(func_get_arg(0) as $n => $v){
 				switch($n){
@@ -242,13 +242,13 @@ abstract class Dao extends \phpman\Object{
 														);
 		
 	}
-	final static private function set_table_name($name,$class){
+	static private function set_table_name($name,$class){
 		$name = self::$_co_anon_[$class][5].$name;
 		if(self::$_co_anon_[$class][6]) $name = strtoupper($name);
 		if(self::$_co_anon_[$class][7]) $name = strtolower($name);
 		return $name;
 	}
-	final private function base_column($_columns_,$name){
+	private function base_column($_columns_,$name){
 		foreach($_columns_ as $c){
 			if($c->is_base() && $c->name() === $name) return $c;
 		}
@@ -258,14 +258,14 @@ abstract class Dao extends \phpman\Object{
 	 * 全てのColumnの一覧を取得する
 	 * @return Column[]
 	 */
-	final public function columns(){
+	public function columns(){
 		return self::$_dao_[$this->_class_id_]->_columns_;
 	}
 	/**
 	 * 主のColumnの一覧を取得する
 	 * @return Column[]
 	 */
-	final public function self_columns($all=false){
+	public function self_columns($all=false){
 		if($all) return array_merge(self::$_dao_[$this->_class_id_]->_where_columns_,self::$_dao_[$this->_class_id_]->_self_columns_);
 		return self::$_dao_[$this->_class_id_]->_self_columns_;
 	}
@@ -273,7 +273,7 @@ abstract class Dao extends \phpman\Object{
 	 * primaryのColumnの一覧を取得する
 	 * @return Column[]
 	 */
-	final public function primary_columns(){
+	public function primary_columns(){
 		$result = array();
 		foreach(self::$_dao_[$this->_class_id_]->_self_columns_ as $column){
 			if($column->primary()) $result[$column->name()] = $column;
@@ -284,14 +284,14 @@ abstract class Dao extends \phpman\Object{
 	 * 必須の条件を取得する
 	 * @return array array(Column,Column)
 	 */
-	final public function conds(){
+	public function conds(){
 		return self::$_dao_[$this->_class_id_]->_conds_;
 	}
 	/**
 	 * join時の条件を取得する
 	 * @return array array(Column,Column)
 	 */
-	final public function join_conds($name){
+	public function join_conds($name){
 		return (isset(self::$_dao_[$this->_class_id_]->_join_conds_[$name])) ? self::$_dao_[$this->_class_id_]->_join_conds_[$name] : array();
 	}
 	/**
@@ -299,7 +299,7 @@ abstract class Dao extends \phpman\Object{
 	 * @param $resultset array
 	 * @return integer
 	 */
-	final public function parse_resultset($resultset){
+	public function parse_resultset($resultset){
 		foreach($resultset as $alias => $value){
 			if(isset(self::$_dao_[$this->_class_id_]->_alias_[$alias])){
 				if(self::$_dao_[$this->_class_id_]->_alias_[$alias] == 'ref1') $this->prop_anon(self::$_dao_[$this->_class_id_]->_alias_[$alias],'has',true);
@@ -321,7 +321,7 @@ abstract class Dao extends \phpman\Object{
 	 * テーブル名を取得
 	 * @return string
 	 */
-	final public function table(){
+	public function table(){
 		return self::$_co_anon_[get_class($this)][1];
 	}
 	protected function __find_conds__(){
@@ -345,7 +345,7 @@ abstract class Dao extends \phpman\Object{
 	/**
 	 * 発行したSQLの記録を開始する
 	 */
-	final static public function start_record(){
+	static public function start_record(){
 		$query = self::$record_query;
 		self::$recording_query = true;
 		self::$record_query = array();
@@ -354,7 +354,7 @@ abstract class Dao extends \phpman\Object{
 	/**
 	 * 発行したSQLの記録を終了する
 	 */
-	final static public function stop_record(){
+	static public function stop_record(){
 		self::$recording_query = false;
 		return self::$record_query;	
 	}
@@ -362,7 +362,7 @@ abstract class Dao extends \phpman\Object{
 	 * 記録したSQLを取得する
 	 * @return array
 	 */
-	final static public function recorded_query(){
+	static public function recorded_query(){
 		return self::$record_query;
 	}
 	/**
@@ -371,14 +371,14 @@ abstract class Dao extends \phpman\Object{
 	 * @throws RuntimeException
 	 * @return \PDOStatement
 	 */
-	final public function query(\phpman\Daq $daq){
+	public function query(\phpman\Daq $daq){
 		if(self::$recording_query) self::$record_query[] = array($daq->sql(),$daq->ar_vars());
 		$statement = self::connection(get_class($this))->prepare($daq->sql());
 		if($statement === false) throw new \phpman\RuntimeException('prepare fail: '.$daq->sql());
 		$statement->execute($daq->ar_vars());
 		return $statement;
 	}
-	final private function update_query(\phpman\Daq $daq){
+	private function update_query(\phpman\Daq $daq){
 		$statement = $this->query($daq);
 		$errors = $statement->errorInfo();
 		if(isset($errors[1])){
@@ -387,7 +387,7 @@ abstract class Dao extends \phpman\Object{
 		}
 		return $statement->rowCount();
 	}
-	final private function func_query(\phpman\Daq $daq,$is_list=false){
+	private function func_query(\phpman\Daq $daq,$is_list=false){
 		$statement = $this->query($daq);
 		$errors = $statement->errorInfo();
 		if(isset($errors[1])){
@@ -396,7 +396,7 @@ abstract class Dao extends \phpman\Object{
 		if($statement->columnCount() == 0) return ($is_list) ? array() : null;
 		return ($is_list) ? $statement->fetchAll(\PDO::FETCH_ASSOC) : $statement->fetchAll(\PDO::FETCH_COLUMN,0);
 	}
-	final private function save_verify_primary_unique(){
+	private function save_verify_primary_unique(){
 		$q = new \phpman\Q();
 		$primary = false;
 		foreach($this->primary_columns() as $column){
@@ -415,7 +415,7 @@ abstract class Dao extends \phpman\Object{
 	/**
 	 * 値の妥当性チェックを行う
 	 */
-	final public function validate(){
+	public function validate(){
 		$err = array();
 		foreach($this->self_columns() as $name => $column){
 			$value = $this->{$name}();
@@ -479,7 +479,7 @@ abstract class Dao extends \phpman\Object{
 			\phpman\Exception::throw_over();
 		}
 	}
-	final private function which_aggregator($exe,array $args,$is_list=false){
+	private function which_aggregator($exe,array $args,$is_list=false){
 		$target_name = $gorup_name = array();
 		if(isset($args[0]) && is_string($args[0])){
 			$target_name = array_shift($args);
@@ -490,7 +490,7 @@ abstract class Dao extends \phpman\Object{
 		$daq = static::call_class_plugin_funcs($exe.'_sql',$this,$target_name,$gorup_name,$query);
 		return $this->func_query($daq,$is_list);
 	}
-	final static private function exec_aggregator_result_cast($dao,$target_name,$value,$cast){
+	static private function exec_aggregator_result_cast($dao,$target_name,$value,$cast){
 		switch($cast){
  			case 'float': return (float)$value;
  			case 'integer': return (int)$value;
@@ -498,13 +498,13 @@ abstract class Dao extends \phpman\Object{
 		$dao->{$target_name}($value);
 		return $dao->{$target_name}();
 	}
-	final static private function exec_aggregator($exec,$target_name,$args,$cast=null){
+	static private function exec_aggregator($exec,$target_name,$args,$cast=null){
 		$dao = new static();
 		$args[] = $dao->__find_conds__();
 		$result = $dao->which_aggregator($exec,$args);
 		return static::exec_aggregator_result_cast($dao,$target_name,current($result),$cast);
 	}
-	final static private function exec_aggregator_by($exec,$target_name,$gorup_name,$args,$cast=null){
+	static private function exec_aggregator_by($exec,$target_name,$gorup_name,$args,$cast=null){
 		if(empty($target_name) || !is_string($target_name)) throw new \phpman\RuntimeException('undef target_name');
 		if(empty($gorup_name) || !is_string($gorup_name)) throw new \phpman\RuntimeException('undef group_name');
 		$dao = new static();
@@ -522,7 +522,7 @@ abstract class Dao extends \phpman\Object{
 	 * @paaram string $target_name 対象となるプロパティ
 	 * @return integer
 	 */
-	final static public function find_count($target_name=null){
+	static public function find_count($target_name=null){
 		$args = func_get_args();
 		return (int)static::exec_aggregator('count',$target_name,$args,'integer');
 	}
@@ -532,7 +532,7 @@ abstract class Dao extends \phpman\Object{
 	 * @param string $gorup_name グルーピングするプロパティ名
 	 * @return integer{}
 	 */
-	final static public function find_count_by($target_name,$gorup_name){
+	static public function find_count_by($target_name,$gorup_name){
 		$args = func_get_args();
 		return static::exec_aggregator_by('count',$target_name,$gorup_name,$args);
 	}
@@ -541,7 +541,7 @@ abstract class Dao extends \phpman\Object{
 	 * @param string $target_name 対象となるプロパティ
 	 * @return number
 	 */
-	final static public function find_sum($target_name){
+	static public function find_sum($target_name){
 		$args = func_get_args();
 		return static::exec_aggregator('sum',$target_name,$args);
 	}
@@ -551,7 +551,7 @@ abstract class Dao extends \phpman\Object{
 	 * @param string $gorup_name グルーピングするプロパティ名
 	 * @return integer{}
 	 */
-	final static public function find_sum_by($target_name,$gorup_name){
+	static public function find_sum_by($target_name,$gorup_name){
 		$args = func_get_args();
 		return static::exec_aggregator_by('sum',$target_name,$gorup_name,$args);
 	}
@@ -561,7 +561,7 @@ abstract class Dao extends \phpman\Object{
 	 * @param string $target_name 対象となるプロパティ
 	 * @return number
 	 */
-	final static public function find_max($target_name){
+	static public function find_max($target_name){
 		$args = func_get_args();
 		return static::exec_aggregator('max',$target_name,$args);
 	}
@@ -571,7 +571,7 @@ abstract class Dao extends \phpman\Object{
 	 * @param string $gorup_name グルーピングするプロパティ名
 	 * @return number
 	 */
-	final static public function find_max_by($target_name,$gorup_name){
+	static public function find_max_by($target_name,$gorup_name){
 		$args = func_get_args();
 		return static::exec_aggregator_by('max',$target_name,$gorup_name,$args);
 	}
@@ -581,7 +581,7 @@ abstract class Dao extends \phpman\Object{
 	 * @param string $gorup_name グルーピングするプロパティ名
 	 * @return number
 	 */
-	final static public function find_min($target_name){
+	static public function find_min($target_name){
 		$args = func_get_args();
 		return static::exec_aggregator('min',$target_name,$args);
 	}
@@ -591,7 +591,7 @@ abstract class Dao extends \phpman\Object{
 	 * @param string $gorup_name グルーピングするプロパティ名
 	 * return integer{}
 	 */
-	final static public function find_min_by($target_name,$gorup_name){
+	static public function find_min_by($target_name,$gorup_name){
 		$args = func_get_args();
 		return static::exec_aggregator_by('min',$target_name,$gorup_name,$args);
 	}
@@ -600,7 +600,7 @@ abstract class Dao extends \phpman\Object{
 	 * @param string $target_name 対象となるプロパティ
 	 * @return number
 	 */
-	final static public function find_avg($target_name){
+	static public function find_avg($target_name){
 		$args = func_get_args();
 		return static::exec_aggregator('avg',$target_name,$args,'float');
 	}
@@ -610,7 +610,7 @@ abstract class Dao extends \phpman\Object{
 	 * @param string $gorup_name グルーピングするプロパティ名
 	 * @return number{}
 	 */
-	final static public function find_avg_by($target_name,$gorup_name){
+	static public function find_avg_by($target_name,$gorup_name){
 		$args = func_get_args();
 		return static::exec_aggregator_by('avg',$target_name,$gorup_name,$args,'float');
 	}
@@ -620,7 +620,7 @@ abstract class Dao extends \phpman\Object{
 	 * @param string $target_name 対象となるプロパティ
 	 * @return mixed[]
 	 */
-	final static public function find_distinct($target_name){
+	static public function find_distinct($target_name){
 		$args = func_get_args();
 		$dao = new static();
 		$args[] = $dao->__find_conds__();
@@ -631,7 +631,7 @@ abstract class Dao extends \phpman\Object{
 	 * 検索結果をひとつ取得する
 	 * @return $this
 	 */
-	final static public function find_get(){
+	static public function find_get(){
 		$args = func_get_args();
 		$dao = new static();
 		$query = new \phpman\Q();
@@ -646,7 +646,7 @@ abstract class Dao extends \phpman\Object{
 	 * @param $name 対象のプロパティ
 	 * @return Daq
 	 */
-	final static public function find_sub($name){
+	static public function find_sub($name){
 		$args = func_get_args();
 		array_shift($args);
 		$dao = new static();
@@ -671,7 +671,7 @@ abstract class Dao extends \phpman\Object{
 		 */
 		return static::call_class_plugin_funcs('select_sql',$dao,$query,$paginator,$name);
 	}
-	final static private function get_statement_iterator($dao,$query){
+	static private function get_statement_iterator($dao,$query){
 		if(!$query->is_order_by()){
 			foreach($dao->primary_columns() as $column) $query->order($column->name());
 		}
@@ -695,7 +695,7 @@ abstract class Dao extends \phpman\Object{
 	 * 検索を実行する
 	 * @return StatementIterator
 	 */
-	final static public function find(){
+	static public function find(){
 		$args = func_get_args();
 		$dao = new static();
 		$query = new \phpman\Q();
@@ -714,7 +714,7 @@ abstract class Dao extends \phpman\Object{
 	 * 検索結果をすべて取得する
 	 * @return self[]
 	 */
-	final static public function find_all(){
+	static public function find_all(){
 		$args = func_get_args();
 		$result = array();
 		foreach(call_user_func_array(array(get_called_class(),'find'),$args) as $p) $result[] = $p;
@@ -723,13 +723,13 @@ abstract class Dao extends \phpman\Object{
 	/**
 	 * コミットする
 	 */
-	final static public function commit(){
+	static public function commit(){
 		self::connection(get_called_class())->commit();
 	}
 	/**
 	 * ロールバックする
 	 */
-	final static public function rollback(){
+	static public function rollback(){
 		self::connection(get_called_class())->rollback();
 	}
 	/**
@@ -737,7 +737,7 @@ abstract class Dao extends \phpman\Object{
 	 * before/after/verifyは実行されない
 	 * @return integer 実行した件数
 	 */
-	final static public function find_delete(){
+	static public function find_delete(){
 		$args = func_get_args();
 		$dao = new static();
 		if(!self::$_co_anon_[get_class($dao)][4]) throw new \phpman\BadMethodCallException('delete is not permitted');
@@ -753,7 +753,7 @@ abstract class Dao extends \phpman\Object{
 	/**
 	 * DBから削除する
 	 */
-	final public function delete(){
+	public function delete(){
 		if(!self::$_co_anon_[get_class($this)][4]) throw new \phpman\BadMethodCallException('delete is not permitted');
 		$this->__before_delete__();
 		$this->__delete_verify__();
@@ -770,7 +770,7 @@ abstract class Dao extends \phpman\Object{
 	 * @param string $prop_name
 	 * @return string 生成されたユニークコード
 	 */
-	final public function set_unique_code($prop_name){
+	public function set_unique_code($prop_name){
 		$code = '';
 		$max = $this->prop_anon($prop_name,'max',32);
 		$ctype = $this->prop_anon($prop_name,'ctype','alnum');
@@ -798,7 +798,7 @@ abstract class Dao extends \phpman\Object{
 	/**
 	 * DBへ保存する
 	 */
-	final public function save(){
+	public function save(){
 		$q = new \phpman\Q();
 		$new = false;
 		foreach($this->primary_columns() as $column){
@@ -894,7 +894,7 @@ abstract class Dao extends \phpman\Object{
 	 * DBの値と同じにする
 	 * @return $this
 	 */
-	final public function sync(){
+	public function sync(){
 		$query = new \phpman\Q();
 		$query->add(new \phpman\Paginator(1,1));
 		foreach($this->primary_columns() as $column) $query->add(Q::eq($column->name(),$this->{$column->name()}()));
@@ -949,7 +949,7 @@ abstract class Dao extends \phpman\Object{
 	 * テーブルの作成
 	 * @throws RuntimeException
 	 */
-	final static public function create_table(){
+	static public function create_table(){
 		$dao = new static();
 		$daq = new \phpman\Daq(static::call_class_plugin_funcs('exists_table_sql',$dao));
 		$count = current($dao->func_query($daq));

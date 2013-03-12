@@ -26,7 +26,7 @@ class Exception extends \Exception{
 			$this->group = $group;
 		}
 	}
-	final public function getGroup(){
+	public function getGroup(){
 		return $this->group;
 	}
 	

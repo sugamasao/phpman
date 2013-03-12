@@ -15,7 +15,7 @@ class Object implements \IteratorAggregate{
 	 * @param mixed $df デフォルト値
 	 * @return mixed
 	 */
-	final static public function anon($n,$df=null){
+	static public function anon($n,$df=null){
 		$c = get_called_class();
 		if(!isset(self::$_m[1][$c])){
 			$d = '';
@@ -36,7 +36,7 @@ class Object implements \IteratorAggregate{
 	 * @param string $doc_name 説明を取得する場合の添字
 	 * @throws \InvalidArgumentException
 	 */
-	final static public function anon_decode($d,$name,$ns_name=null,$doc_name=null){
+	static public function anon_decode($d,$name,$ns_name=null,$doc_name=null){
 		$result = array();
 		$decode_func = function($s){
 			if(empty($s)) return array();
@@ -66,7 +66,7 @@ class Object implements \IteratorAggregate{
 		}
 		return $result;
 	}
-	final public function __construct(){
+	public function __construct(){
 		$c = get_class($this);
 		if(!isset(self::$_m[0][$c])){
 			self::$_m[0][$c] = array();
@@ -94,7 +94,7 @@ class Object implements \IteratorAggregate{
 		}
 		if(method_exists($this,'__init__')) $this->__init__();
 	}
-	final public function __call($n,$args){
+	public function __call($n,$args){
 		if($n[0] != '_'){
 			list($c,$p) = (in_array($n,array_keys(get_object_vars($this)))) ? array((empty($args) ? 'get' : 'set'),$n) : (preg_match("/^([a-z]+)_([a-zA-Z].*)$/",$n,$m) ? array($m[1],$m[2]) : array(null,null));
 			if(method_exists($this,$am=('___'.$c.'___'))){
@@ -657,10 +657,10 @@ class Object implements \IteratorAggregate{
 			eq(2,$obj1->fm_ccc());
 		*/
 	}
-	final public function __destruct(){
+	public function __destruct(){
 		if(method_exists($this,'__del__')) $this->__del__();
 	}
-	final public function __toString(){
+	public function __toString(){
 		return (method_exists($this,'__str__')) ? (string)$this->__str__() : get_class($this);
 	}
 	
@@ -675,7 +675,7 @@ class Object implements \IteratorAggregate{
 	 * @parama boolean $f 値をデフォルト値で上書きするか
 	 * @return mixed
 	 */
-	final public function prop_anon($p,$n,$d=null,$f=false){
+	public function prop_anon($p,$n,$d=null,$f=false){
 		if($f) $this->_im[$p][$n] = $d;
 		$v = isset($this->_im[$p][$n]) ? $this->_im[$p][$n] : ((isset(self::$_m[0][get_class($this)][$p][$n])) ? self::$_m[0][get_class($this)][$p][$n] : $d);
 		if(is_string($v) && $d !== $v) $v = preg_replace('/array\((.+?)\)/','[\\1]',$v);
@@ -685,7 +685,7 @@ class Object implements \IteratorAggregate{
 	 * アクセス可能なプロパティを取得する
 	 * @return mixed{}
 	 */
-	final public function props(){
+	public function props(){
 		$r = array();
 		foreach(get_object_vars($this) as $n => $v){
 			if($n[0] != '_') $r[$n] = $this->{$n}();
@@ -737,12 +737,12 @@ class Object implements \IteratorAggregate{
 		}
 		return new \ArrayIterator($r);
 	}
-	final private function ___get___(){
+	private function ___get___(){
 		if($this->prop_anon($this->_,'get') === false) throw new \InvalidArgumentException('not permitted');
 		if($this->prop_anon($this->_,'attr') !== null) return (is_array($this->{$this->_})) ? $this->{$this->_} : (is_null($this->{$this->_}) ? array() : array($this->{$this->_}));
 		return $this->{$this->_};
 	}
-	final private function ___set___($v){
+	private function ___set___($v){
 		if($this->prop_anon($this->_,'set') === false) throw new \InvalidArgumentException('not permitted');
 		$t = $this->prop_anon($this->_,'type');
 		switch($this->prop_anon($this->_,'attr')){
@@ -758,7 +758,7 @@ class Object implements \IteratorAggregate{
 		}
 		return $this;
 	}
-	final private function ___rm___(){
+	private function ___rm___(){
 		if($this->prop_anon($this->_,'set') === false) throw new \InvalidArgumentException('not permitted');
 		if($this->prop_anon($this->_,'attr') === null){
 			$this->{$this->_} = null;
@@ -770,7 +770,7 @@ class Object implements \IteratorAggregate{
 			}
 		}
 	}
-	final private function ___fm___($f=null,$d=null){
+	private function ___fm___($f=null,$d=null){
 		$p = $this->_;
 		$v = (method_exists($this,$m=('__get_'.$p.'__'))) ? call_user_func(array($this,$m)) : $this->___get___();
 		switch($this->prop_anon($p,'type')){
@@ -789,7 +789,7 @@ class Object implements \IteratorAggregate{
 		}
 		return $v;
 	}
-	final private function ___ar___($i=null,$j=null){
+	private function ___ar___($i=null,$j=null){
 		$v = $this->___get___();
 		$a = is_array($v) ? $v : (($v === null) ? array() : array($v));
 		if(isset($i)){
@@ -804,11 +804,11 @@ class Object implements \IteratorAggregate{
 		}
 		return $a;
 	}
-	final private function ___in___($k=null,$d=null){
+	private function ___in___($k=null,$d=null){
 		$v = $this->___get___();
 		return (isset($k)) ? ((is_array($v) && isset($v[$k]) && $v[$k] !== null) ? $v[$k] : $d) : $d;
 	}
-	final private function ___is___($k=null){
+	private function ___is___($k=null){
 		$v = $this->___get___();
 		if($this->prop_anon($this->_,'attr') !== null){
 			if($k === null) return !empty($v);

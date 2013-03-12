@@ -37,7 +37,7 @@ class Xml implements \IteratorAggregate{
 	 * @param boolean
 	 * @return boolean
 	 */
-	final public function close_empty(){
+	public function close_empty(){
 		if(func_num_args() > 0) $this->close_empty = (boolean)func_get_arg(0);
 		return $this->close_empty;
 	}
@@ -45,7 +45,7 @@ class Xml implements \IteratorAggregate{
 	 * エスケープするか
 	 * @param boolean $bool
 	 */
-	final public function escape($bool){
+	public function escape($bool){
 		$this->esc = (boolean)$bool;
 		return $this;
 	}
@@ -53,21 +53,21 @@ class Xml implements \IteratorAggregate{
 	 * setできた文字列
 	 * @return string
 	 */
-	final public function plain(){
+	public function plain(){
 		return $this->plain;
 	}
 	/**
 	 * 子要素検索時のカーソル
 	 * @return integer
 	 */
-	final public function cur(){
+	public function cur(){
 		return $this->pos;
 	}
 	/**
 	 * 要素名
 	 * @return string
 	 */
-	final public function name($name=null){
+	public function name($name=null){
 		if(isset($name)) $this->name = $name;
 		return $this->name;
 	}
@@ -102,7 +102,7 @@ class Xml implements \IteratorAggregate{
 	 * @param boolean
 	 * @return string
 	 */
-	final public function value(){
+	public function value(){
 		if(func_num_args() > 0) $this->value = $this->get_value(func_get_arg(0));
 		if(strpos($this->value,'<![CDATA[') === 0) return substr($this->value,9,-3);
 		return $this->value;
@@ -145,7 +145,7 @@ class Xml implements \IteratorAggregate{
 	 * ２つ目のパラメータがあるとアトリビュートの追加となる
 	 * @param mixed $arg
 	 */
-	final public function add($arg){
+	public function add($arg){
 		if(func_num_args() == 2){
 			$this->attr(func_get_arg(0),func_get_arg(1));
 		}else{
@@ -168,7 +168,7 @@ class Xml implements \IteratorAggregate{
 	 * @param string $d アトリビュートが存在しない場合の代替値
 	 * @return string
 	 */
-	final public function in_attr($n,$d=null){
+	public function in_attr($n,$d=null){
 		return isset($this->attr[strtolower($n)]) ? ($this->esc ? htmlentities($this->attr[strtolower($n)],ENT_QUOTES,'UTF-8') : $this->attr[strtolower($n)]) : (isset($d) ? (string)$d : null);
 		/***
 			$x = new self("test");
@@ -192,7 +192,7 @@ class Xml implements \IteratorAggregate{
 	 * アトリビュートから削除する
 	 * パラメータが一つも無ければ全件削除
 	 */
-	final public function rm_attr(){
+	public function rm_attr(){
 		if(func_num_args() === 0){
 			$this->attr = array();
 		}else{
@@ -218,7 +218,7 @@ class Xml implements \IteratorAggregate{
 	 * @param string $name
 	 * @return boolean
 	 */
-	final public function is_attr($name){
+	public function is_attr($name){
 		return array_key_exists($name,$this->attr);
 		/***
 			$x = new self("test");
@@ -235,7 +235,7 @@ class Xml implements \IteratorAggregate{
 	 * アトリビュートを設定
 	 * @return self $this
 	 */
-	final public function attr($key,$value){
+	public function attr($key,$value){
 		$this->attr[strtolower($key)] = is_bool($value) ? (($value) ? 'true' : 'false') : $value;
 		return $this;
 		/***
@@ -268,7 +268,7 @@ class Xml implements \IteratorAggregate{
 	 * 値の無いアトリビュートを設定
 	 * @param string $v
 	 */
-	final public function plain_attr($v){
+	public function plain_attr($v){
 		$this->plain_attr[] = $v;
 	}
 	/**

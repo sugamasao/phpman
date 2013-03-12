@@ -63,7 +63,7 @@ class Template{
 	 * 配列からテンプレート変数に値をセットする
 	 * @param array $array
 	 */
-	final public function cp($array){
+	public function cp($array){
 		if(is_array($array) || is_object($array)){
 			foreach($array as $k => $v) $this->vars[$k] = $v;
 		}else{
@@ -76,7 +76,7 @@ class Template{
 	 * @param string $file
 	 * @param string $template_name
 	 */
-	final public function output($file,$template_name=null){
+	public function output($file,$template_name=null){
 		print($this->read($file,$template_name));
 		exit;
 	}
@@ -86,7 +86,7 @@ class Template{
 	 * @param string $template_name
 	 * @return string
 	 */
-	final public function read($file,$template_name=null){
+	public function read($file,$template_name=null){
 		if(!is_file($file) && strpos($file,'://') === false) throw new \InvalidArgumentException($file.' not found');
 		$this->file = $file;
 		$cname = md5($this->template_super.$this->put_block.$this->file.$this->selected_template);
@@ -150,7 +150,7 @@ class Template{
 	 * @param string $template_name
 	 * @return string
 	 */
-	final public function get($src,$template_name=null){
+	public function get($src,$template_name=null){
 		return $this->execute($this->replace($src,$template_name));
 	}
 	private function execute($src){
