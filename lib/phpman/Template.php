@@ -97,6 +97,7 @@ class Template{
 		 */
 		if(static::call_class_plugin_funcs('has_template_cache',$cname) !== true){
 			if(!empty($this->put_block)){
+				// TODO
 				$src = $this->read_src($this->put_block);
 				if(strpos($src,'rt:extends') !== false){
 					\phpman\Xml::set($x,'<:>'.$src.'</:>');
@@ -105,6 +106,7 @@ class Template{
 				$src = sprintf('<rt:extends href="%s" />\n',$file).$src;
 				$this->file = $this->put_block;
 			}else{
+				// TODO
 				$src = $this->read_src($this->file);
 			}
 			$src = $this->replace($src,$template_name);
@@ -265,10 +267,12 @@ class Template{
 		return $src;
 	}
 	private function read_src($filename){
+		// TODO
 		$src = file_get_contents($filename);
 		return (preg_match('/^http[s]*\:\/\//',$filename)) ? $this->parse_url($src,dirname($filename)) : $src;
 	}
 	private function rttemplate($src){
+		// TODO
 		$values = array();
 		$bool = false;
 		while(\phpman\Xml::set($tag,$src,'rt:template')){
@@ -284,10 +288,12 @@ class Template{
 		return ($bool) ? implode($values) : $src;
 	}
 	private function rtblock($src,$filename){
+		// TODO
 		if(strpos($src,'rt:block') !== false || strpos($src,'rt:extends') !== false){
 			$base_filename = $filename;
 			$blocks = $paths = array();
 			while(\phpman\Xml::set($e,'<:>'.$this->rtcomment($src).'</:>','rt:extends') !== false){
+				// TODO
 				$href = \phpman\Util::path_absolute(str_replace("\\",'/',dirname($filename)),$e->in_attr('href'));
 				if(!$e->is_attr('href') || !is_file($href)) throw new \LogicException('href not found '.$filename);
 				if($filename === $href) throw new \LogicException('Infinite Recursion Error'.$filename);
@@ -299,6 +305,7 @@ class Template{
 						$paths[$n] = $filename;
 					}
 				}
+				// TODO
 				$src = $this->rttemplate($this->replace_xtag($this->read_src($filename = $href)));
 				$this->selected_template = $e->in_attr('name');
 			}
@@ -308,6 +315,7 @@ class Template{
 					foreach($bx->in('rt:block') as $b) $src = str_replace($b->plain(),$b->value(),$src);
 				}
 			}else{
+				// TODO
 				if(!empty($this->template_super)) $src = $this->read_src(\phpman\Util::path_absolute(str_replace("\\",'/',dirname($base_filename)),$this->template_super));
 				while(\phpman\Xml::set($b,$src,'rt:block')){
 					$n = $b->in_attr('name');
