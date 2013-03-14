@@ -1,23 +1,31 @@
 <?php
 $template = new \phpman\Template();
 $src = $template->read(__DIR__.'/resources/allinone.html','abc');
-eq('ABC',$src);
-eq('IFOOTER',$src);
+meq('ABC',$src);
+nmeq('INDEX',$src);
+nmeq('DEF',$src);
+meq('IFOOTER',$src);
 
 $template = new \phpman\Template();
 $src = $template->read(__DIR__.'/resources/allinone.html','def');
-eq('DEF',$src);
-eq('DFOOTER',$src);
+meq('DEF',$src);
+nmeq('INDEX',$src);
+nmeq('ABC',$src);
+nmeq('IFOOTER',$src);
+meq('DFOOTER',$src);
 
 $template = new \phpman\Template();
 $src = $template->read(__DIR__.'/resources/allinone.html','xyz');
-eq('XYZ',$src);
-eq('IFOOTER',$src);
+meq('XYZ',$src);
+nmeq('INDEX',$src);
+nmeq('ABC',$src);
+meq('IFOOTER',$src);
 
 $template = new \phpman\Template();
 $src = $template->read(__DIR__.'/resources/allinone.html','index');
-eq('INDEX',$src);
-eq('IFOOTER',$src);
-
+meq('INDEX',$src);
+meq('IFOOTER',$src);
+nmeq('DFOOTER',$src);
+nmeq('ABC',$src);
 
 

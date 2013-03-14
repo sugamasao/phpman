@@ -97,8 +97,7 @@ class Template{
 		 */
 		if(static::call_class_plugin_funcs('has_template_cache',$cname) !== true){
 			if(!empty($this->put_block)){
-				// TODO
-				$src = $this->read_src($this->put_block);
+				$src = $this->read_src($this->put_block,$template_name);
 				if(strpos($src,'rt:extends') !== false){
 					\phpman\Xml::set($x,'<:>'.$src.'</:>');
 					foreach($x->in('rt:extends') as $ext) $src = str_replace($ext->plain(),'',$src);
@@ -106,8 +105,7 @@ class Template{
 				$src = sprintf('<rt:extends href="%s" />\n',$file).$src;
 				$this->file = $this->put_block;
 			}else{
-				// TODO
-				$src = $this->read_src($this->file);
+				$src = $this->read_src($this->file,$template_name);
 			}
 			$src = $this->replace($src,$template_name);
 			/**
@@ -166,7 +164,7 @@ class Template{
 		$src = str_replace(array("\\\\","\\\"","\\'"),array('__ESC_DESC__','__ESC_DQ__','__ESC_SQ__'),$src);
 		$src = $this->replace_xtag($src);
 		foreach($this->get_object_plugin_funcs('init_template') as $o) $src = static::call_func($o,$src);
-		$src = $this->rtcomment($this->rtblock($this->rttemplate($src),$this->file));
+		$src = $this->rtcomment($this->rtblock($src,$this->file));
 		$this->selected_src = $src;
 		foreach($this->get_object_plugin_funcs('before_template') as $o) $src = static::call_func($o,$src);
 		$src = $this->rtif($this->rtloop($this->html_form($this->html_list($src))));
@@ -266,36 +264,31 @@ class Template{
 		}
 		return $src;
 	}
-	private function read_src($filename){
-		// TODO
+	private function read_src($filename,$name=null){
+		if(preg_match('/^(.*)#(.+)$/',$filename,$m)){
+			list($filename,$name) = array($m[1],$m[2]);
+		}
 		$src = file_get_contents($filename);
-		return (preg_match('/^http[s]*\:\/\//',$filename)) ? $this->parse_url($src,dirname($filename)) : $src;
-	}
-	private function rttemplate($src){
-		// TODO
-		$values = array();
-		$bool = false;
-		while(\phpman\Xml::set($tag,$src,'rt:template')){
-			$src = str_replace($tag->plain(),'',$src);
-			$values[$tag->in_attr('name')] = $tag->value();
-			$src = str_replace($tag->plain(),'',$src);
-			$bool = true;
-		}
-		if(!empty($this->selected_template)){
-			if(!array_key_exists($this->selected_template,$values)) throw new \LogicException('undef rt:template '.$this->selected_template);
-			return $values[$this->selected_template];
-		}
-		return ($bool) ? implode($values) : $src;
+		$src = (preg_match('/^http[s]*\:\/\//',$filename)) ? $this->parse_url($src,dirname($filename)) : $src;
+		
+		if(!empty($name)){
+			\phpman\Xml::set($temp,'<:>'.$this->rtcomment($src).'</:>',':');
+			foreach($temp->in('rt:template') as $tag){
+				if($tag->in_attr('name') == $name) return $tag->value();
+			}
+			throw new \LogicException('undef rt:template '.$name);
+		}		
+		return $src;
 	}
 	private function rtblock($src,$filename){
-		// TODO
 		if(strpos($src,'rt:block') !== false || strpos($src,'rt:extends') !== false){
 			$base_filename = $filename;
 			$blocks = $paths = array();
 			while(\phpman\Xml::set($e,'<:>'.$this->rtcomment($src).'</:>','rt:extends') !== false){
-				// TODO
-				$href = \phpman\Util::path_absolute(str_replace("\\",'/',dirname($filename)),$e->in_attr('href'));
-				if(!$e->is_attr('href') || !is_file($href)) throw new \LogicException('href not found '.$filename);
+				$href = $e->in_attr('href');
+				if(substr($href,0,1) == '#') $href = $filename.$href;
+				$href = \phpman\Util::path_absolute(str_replace("\\",'/',dirname($filename)),$href);
+				if(empty($href) || !is_file(preg_replace('/^(.+)#.*$/','\\1',$href))) throw new \LogicException('href not found '.$filename);
 				if($filename === $href) throw new \LogicException('Infinite Recursion Error'.$filename);
 				\phpman\Xml::set($bx,'<:>'.$this->rtcomment($src).'</:>',':');
 				foreach($bx->in('rt:block') as $b){
@@ -305,9 +298,8 @@ class Template{
 						$paths[$n] = $filename;
 					}
 				}
-				// TODO
-				$src = $this->rttemplate($this->replace_xtag($this->read_src($filename = $href)));
-				$this->selected_template = $e->in_attr('name');
+				$src = $this->replace_xtag($this->read_src($href));
+				$filename = preg_replace('/^(.+)#.*$/','\\1',$href);
 			}
 			foreach($this->get_object_plugin_funcs('before_block_template') as $o) $src = static::call_func($o,$src);
 			if(empty($blocks)){
@@ -315,7 +307,6 @@ class Template{
 					foreach($bx->in('rt:block') as $b) $src = str_replace($b->plain(),$b->value(),$src);
 				}
 			}else{
-				// TODO
 				if(!empty($this->template_super)) $src = $this->read_src(\phpman\Util::path_absolute(str_replace("\\",'/',dirname($base_filename)),$this->template_super));
 				while(\phpman\Xml::set($b,$src,'rt:block')){
 					$n = $b->in_attr('name');
